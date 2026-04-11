@@ -19,8 +19,8 @@ export interface WidgetOptions {
 export const defaultWidgetOptions: WidgetOptions = {
   backgroundColor: '#09121d',
   textColor: '#f6f7fb',
-  backgroundOpacity: 78,
-  fontSize: 52,
+  backgroundOpacity: 100,
+  fontSize: 76,
   channelsSize: 18,
   showChannels: true,
   channelsLayout: 'row',
@@ -36,26 +36,6 @@ function readHexColor(value: string | null, fallback: string): string {
   return /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback
 }
 
-function readOpacity(value: string | null, fallback: number): number {
-  const parsedValue = Number(value)
-
-  if (!Number.isFinite(parsedValue)) {
-    return fallback
-  }
-
-  return Math.min(100, Math.max(0, Math.round(parsedValue)))
-}
-
-function readFontSize(value: string | null, fallback: number): number {
-  const parsedValue = Number(value)
-
-  if (!Number.isFinite(parsedValue)) {
-    return fallback
-  }
-
-  return Math.min(160, Math.max(16, Math.round(parsedValue)))
-}
-
 export function getWidgetOptions(search: string): WidgetOptions {
   const searchParams = new URLSearchParams(search)
   const channelsLayout = searchParams.get('channels_layout')
@@ -69,18 +49,9 @@ export function getWidgetOptions(search: string): WidgetOptions {
       searchParams.get('text'),
       defaultWidgetOptions.textColor,
     ),
-    backgroundOpacity: readOpacity(
-      searchParams.get('opacity'),
-      defaultWidgetOptions.backgroundOpacity,
-    ),
-    fontSize: readFontSize(
-      searchParams.get('size'),
-      defaultWidgetOptions.fontSize,
-    ),
-    channelsSize: readFontSize(
-      searchParams.get('channels_size'),
-      defaultWidgetOptions.channelsSize,
-    ),
+    backgroundOpacity: defaultWidgetOptions.backgroundOpacity,
+    fontSize: defaultWidgetOptions.fontSize,
+    channelsSize: defaultWidgetOptions.channelsSize,
     showChannels: searchParams.get('channels') !== '0',
     channelsLayout: channelsLayout === 'column' ? 'column' : 'row',
     showTotal: searchParams.get('total') !== '0',

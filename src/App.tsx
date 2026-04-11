@@ -69,36 +69,59 @@ function SettingsPage() {
   const [options, setOptions] = useState<WidgetOptions>(() =>
     getWidgetOptions(window.location.search),
   )
+  const [isCopied, setIsCopied] = useState(false)
   const obsUrl = useMemo(() => buildObsUrl(options), [options])
+
+  async function handleCopyClick() {
+    await navigator.clipboard.writeText(obsUrl)
+    setIsCopied(true)
+    window.setTimeout(() => setIsCopied(false), 1500)
+  }
 
   return (
     <main className="app-shell">
-      <section className="settings-card">
+      {/* <section className="settings-card"> */}
         <div className="settings-hero">
-          <p className="settings-kicker">StreamVi Widget</p>
           <h1 className="settings-title">Viewer counter for OBS</h1>
-          <p className="settings-description">
-            This page is the control surface for the widget. Use the OBS link below
-            as a browser source inside OBS Studio.
-          </p>
         </div>
 
         <div className="settings-panel">
-          <h2 className="settings-panel-title">How to use it</h2>
-          <ol className="settings-steps">
-            <li>Open this page with `?template_id=...&token=...` in the URL.</li>
-            <li>Adjust the widget appearance below.</li>
-            <li>Copy the OBS link and add it as a Browser Source.</li>
-          </ol>
-        </div>
-
-        <div className="settings-panel">
-          <h2 className="settings-panel-title">OBS URL</h2>
-          <div className="settings-variant">
-            <p className="settings-variant-title">Widget</p>
-            <p className="settings-link" title={obsUrl}>
-              {obsUrl}
-            </p>
+            <div className="settings-link-row">
+              <div className="settings-link-field">
+                <input
+                  className="settings-link-input"
+                  type="text"
+                  value={obsUrl}
+                  readOnly
+                  aria-label="OBS widget URL"
+                  onFocus={(event) => event.currentTarget.select()}
+                />
+                <button
+                  className="settings-icon-button"
+                  type="button"
+                  aria-label={isCopied ? 'Copied' : 'Copy URL'}
+                  title={isCopied ? 'Copied' : 'Copy URL'}
+                  onClick={() => {
+                    void handleCopyClick()
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M9 9.75A2.25 2.25 0 0 1 11.25 7.5h7.5A2.25 2.25 0 0 1 21 9.75v7.5a2.25 2.25 0 0 1-2.25 2.25h-7.5A2.25 2.25 0 0 1 9 17.25v-7.5Z"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                    />
+                    <path
+                      d="M15 7.5V6.75A2.25 2.25 0 0 0 12.75 4.5h-7.5A2.25 2.25 0 0 0 3 6.75v7.5a2.25 2.25 0 0 0 2.25 2.25H6"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
 
             <div className="minimal-builder">
               <div className="minimal-builder-controls">
@@ -276,13 +299,8 @@ function SettingsPage() {
                 />
               </div>
             </div>
-
-            <a className="settings-button" href={obsUrl} target="_blank" rel="noreferrer">
-              Open widget
-            </a>
           </div>
-        </div>
-      </section>
+      {/* </section> */}
     </main>
   )
 }

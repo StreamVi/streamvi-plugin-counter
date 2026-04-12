@@ -82,7 +82,7 @@ export async function getBroadcastRestreams(
         broadcast_id: broadcastId,
         key: tokenId,
         widget: tokenId,
-        v: '1',
+        v: '2',
       },
     },
   )

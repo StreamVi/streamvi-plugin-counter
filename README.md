@@ -65,49 +65,6 @@ http://localhost:5511/obs?template_id=YOUR_TEMPLATE_ID&token=YOUR_token
 - `npm run typecheck` - run TypeScript project checks
 - `npm run check` - run lint and production build
 
-## Build and Deploy
-
-Build the production bundle locally:
-
-```bash
-npm install
-npm run build
-```
-
-This creates the static build in `dist/`.
-
-To deploy from this computer to the remote server `78.17.65.100`, you can sync the build output to the `layout-viewers` app directory.
-
-Working assumption:
-
-- remote app name: `layout-viewers`
-- remote target directory: `/var/www/layout-viewers`
-- deployment is done over SSH from the local machine
-
-Example deploy command:
-
-```bash
-rsync -avz --delete dist/ DEPLOY_USER@78.17.65.100:/var/www/layout-viewers/
-```
-
-If the target directory requires elevated permissions on the server, upload to a temporary directory first and then move it over SSH:
-
-```bash
-rsync -avz --delete dist/ DEPLOY_USER@78.17.65.100:/tmp/layout-viewers/
-ssh DEPLOY_USER@78.17.65.100 "sudo mkdir -p /var/www/layout-viewers && sudo rsync -av --delete /tmp/layout-viewers/ /var/www/layout-viewers/"
-```
-
-Recommended deployment flow from the local machine:
-
-```bash
-npm run lint
-npm run typecheck
-npm run build
-rsync -avz --delete dist/ DEPLOY_USER@78.17.65.100:/var/www/layout-viewers/
-```
-
-After deploy, ensure your web server on the remote host serves `/var/www/layout-viewers` as a static site and rewrites SPA requests to `index.html` when needed.
-
 ## Project Structure
 
 ```text

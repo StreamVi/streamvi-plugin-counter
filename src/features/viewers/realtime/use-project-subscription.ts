@@ -28,6 +28,7 @@ export function useProjectSubscription({
 
     if (subscriptionRef.current) {
       subscriptionRef.current.unsubscribe()
+      client.removeSubscription(subscriptionRef.current)
       subscriptionRef.current = null
     }
 
@@ -53,6 +54,7 @@ export function useProjectSubscription({
     return () => {
       if (subscriptionRef.current === subscription) {
         subscription.unsubscribe()
+        client.removeSubscription(subscription)
         subscriptionRef.current = null
       }
     }
@@ -60,11 +62,14 @@ export function useProjectSubscription({
 
   useEffect(
     () => () => {
-      if (subscriptionRef.current) {
+      const client = clientRef.current
+
+      if (client && subscriptionRef.current) {
         subscriptionRef.current.unsubscribe()
+        client.removeSubscription(subscriptionRef.current)
         subscriptionRef.current = null
       }
     },
-    [],
+    [clientRef],
   )
 }

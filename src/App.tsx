@@ -4,45 +4,40 @@ import { WidgetCard, ViewerWidget } from './features/viewers/ViewerWidget'
 import type { ViewerChannel } from './features/viewers/api/contracts'
 import {
   applyWidgetOptions,
+  getMissingWidgetParams,
   getWidgetOptions,
+  getWidgetQueryParams,
   type WidgetOptions,
 } from './features/viewers/types'
 
 const previewChannels: ViewerChannel[] = [
   {
-    channel_id: 1,
-    name: 'YouTube',
     restream_id: 1,
-    message: 0,
-    channel_type: 'youtube',
-    platform_id: 4,
     platform_icon_url: 'https://cdn.platform-icons.streamvi.io/dark/s/4.svg',
     platform_title: 'YouTube',
     viewer: 6420,
   },
   {
-    channel_id: 2,
-    name: 'Twitch',
     restream_id: 2,
-    message: 0,
-    channel_type: 'twitch',
-    platform_id: 2,
     platform_icon_url: 'https://cdn.platform-icons.streamvi.io/dark/s/2.svg',
     platform_title: 'Twitch',
     viewer: 3810,
   },
   {
-    channel_id: 3,
-    name: 'VK',
     restream_id: 3,
-    message: 0,
-    channel_type: 'vk',
-    platform_id: 1,
     platform_icon_url: 'https://cdn.platform-icons.streamvi.io/dark/s/1.svg',
     platform_title: 'VK',
     viewer: 2310,
   },
 ]
+
+function toUiScale(value: number): number {
+  return Math.round(value / 2)
+}
+
+function fromUiScale(value: number): number {
+  return value * 2
+}
 
 function buildObsUrl(options: WidgetOptions): string {
   const currentUrl = new URL(window.location.href)
@@ -66,11 +61,16 @@ function buildObsUrl(options: WidgetOptions): string {
 }
 
 function SettingsPage() {
+  const widgetParams = useMemo(
+    () => getWidgetQueryParams(window.location.search),
+    [],
+  )
   const [options, setOptions] = useState<WidgetOptions>(() =>
     getWidgetOptions(window.location.search),
   )
   const [isCopied, setIsCopied] = useState(false)
   const obsUrl = useMemo(() => buildObsUrl(options), [options])
+  const missingParams = getMissingWidgetParams(widgetParams)
 
   async function handleCopyClick() {
     await navigator.clipboard.writeText(obsUrl)
@@ -80,11 +80,25 @@ function SettingsPage() {
 
   return (
     <main className="app-shell">
-      {/* <section className="settings-card"> */}
-        <div className="settings-hero">
-          <h1 className="settings-title">Viewer counter for OBS</h1>
-        </div>
+      <div className="settings-hero">
+        <h1 className="settings-title">Viewer counter for OBS</h1>
+      </div>
 
+      {missingParams.length > 0 ? (
+        <section className="settings-panel settings-notice">
+          <h2 className="settings-notice-title">Missing widget parameters</h2>
+          <p className="settings-notice-text">
+            Open this page with the required query parameters:
+            {' '}
+            {missingParams.join(', ')}.
+          </p>
+          <p className="settings-notice-text">
+            Example:
+            {' '}
+            <code>?template_id=YOUR_TEMPLATE_ID&token=YOUR_TOKEN</code>
+          </p>
+        </section>
+      ) : (
         <div className="settings-panel">
             <div className="settings-link-row">
               <div className="settings-link-field">
@@ -179,19 +193,19 @@ function SettingsPage() {
 
                 <label className="settings-field">
                   <span className="settings-field-label">
-                    Font size: {options.fontSize}px
+                    Text scale: {toUiScale(options.fontSize)}
                   </span>
                   <input
                     className="settings-range-input"
                     type="range"
-                    min="16"
-                    max="160"
+                    min="5"
+                    max="100"
                     step="1"
-                    value={options.fontSize}
+                    value={toUiScale(options.fontSize)}
                     onChange={(event) =>
                       setOptions((current) => ({
                         ...current,
-                        fontSize: Number(event.target.value),
+                        fontSize: fromUiScale(Number(event.target.value)),
                       }))
                     }
                   />
@@ -199,13 +213,13 @@ function SettingsPage() {
 
                 <label className="settings-field">
                   <span className="settings-field-label">
-                    Channels size: {options.channelsSize}px
+                    Channels scale: {options.channelsSize}
                   </span>
                   <input
                     className="settings-range-input"
                     type="range"
-                    min="12"
-                    max="64"
+                    min="8"
+                    max="96"
                     step="1"
                     value={options.channelsSize}
                     onChange={(event) =>
@@ -215,6 +229,20 @@ function SettingsPage() {
                       }))
                     }
                   />
+                </label>
+
+                <label className="settings-toggle">
+                  <input
+                    type="checkbox"
+                    checked={options.testMode}
+                    onChange={(event) =>
+                      setOptions((current) => ({
+                        ...current,
+                        testMode: event.target.checked,
+                      }))
+                    }
+                  />
+                  <span>Test mode</span>
                 </label>
 
                 <label className="settings-toggle">
@@ -300,7 +328,7 @@ function SettingsPage() {
               </div>
             </div>
           </div>
-      {/* </section> */}
+      )}
     </main>
   )
 }

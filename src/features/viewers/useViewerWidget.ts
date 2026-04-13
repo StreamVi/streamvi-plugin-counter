@@ -19,8 +19,29 @@ import {
   useProjectInfoQuery,
   viewerQueryKeys,
 } from "./queries";
-import { getWidgetQueryParams } from "./types";
+import { getWidgetOptions, getWidgetQueryParams } from "./types";
 import { getCentrifugoConnectionToken } from "./api/client";
+
+const TEST_CHANNELS: ViewerChannel[] = [
+  {
+    restream_id: 1,
+    platform_icon_url: "https://cdn.platform-icons.streamvi.io/dark/s/4.svg",
+    platform_title: "YouTube",
+    viewer: 6420,
+  },
+  {
+    restream_id: 2,
+    platform_icon_url: "https://cdn.platform-icons.streamvi.io/dark/s/2.svg",
+    platform_title: "Twitch",
+    viewer: 3810,
+  },
+  {
+    restream_id: 3,
+    platform_icon_url: "https://cdn.platform-icons.streamvi.io/dark/s/1.svg",
+    platform_title: "VK",
+    viewer: 2310,
+  },
+];
 
 function isLiveStatus(
   value: ReturnType<typeof useBroadcastStatusQuery>["data"],
@@ -48,21 +69,13 @@ function buildChannels(
   return restreams.results
     .filter(
       (item) =>
-        item.viewer !== undefined &&
-        item.message !== undefined &&
-        typeof item.viewer === "number" &&
-        typeof item.message === "number",
+        item.viewer !== undefined && typeof item.viewer === "number",
     )
     .map((item) => {
       const platform = platformsByType.get(item.channel_type.toLowerCase());
 
       return {
-        channel_id: item.channel_id,
-        name: item.channel_name,
         restream_id: item.id,
-        message: item.message ?? 0,
-        channel_type: item.channel_type,
-        platform_id: platform?.id ?? null,
         platform_icon_url: platform
           ? `https://cdn.platform-icons.streamvi.io/dark/s/${platform.id}.svg`
           : null,
@@ -72,43 +85,30 @@ function buildChannels(
     });
 }
 
-function getStatusLabel(
-  status: ViewerWidgetViewModel["status"],
-  isStreamActive: boolean,
-): string {
-  if (status === "loading") {
-    return "Connecting";
-  }
-
-  if (status === "error") {
-    return "Error";
-  }
-
-  return isStreamActive ? "" : "Offline";
-}
-
 export function useViewerWidget(): ViewerWidgetViewModel {
   const queryClient = useQueryClient();
-  const { templateId, token } = useMemo(
+  const { token } = useMemo(
     () => getWidgetQueryParams(window.location.search),
     [],
   );
+  const { testMode } = useMemo(
+    () => getWidgetOptions(window.location.search),
+    [],
+  );
+  const liveToken = testMode ? "" : token;
   const clientRef = useRef<Centrifuge | null>(null);
   const projectSubscriptionRef = useRef<Subscription | null>(null);
   const broadcastSubscriptionRef = useRef<Subscription | null>(null);
   const [broadcastId, setBroadcastId] = useState<number | null>(null);
   const [connectionState, setConnectionState] = useState<
     ViewerWidgetViewModel["status"]
-  >(token ? "loading" : "error");
-  const [connectionError, setConnectionError] = useState<string | null>(
-    token ? null : "Add ?template_id=...&token=... to the OBS widget URL.",
-  );
+  >(testMode ? "ready" : token ? "loading" : "error");
 
-  const projectInfoQuery = useProjectInfoQuery(token);
-  const platformsQuery = usePlatformsQuery(token);
+  const projectInfoQuery = useProjectInfoQuery(liveToken);
+  const platformsQuery = usePlatformsQuery(liveToken);
   const projectId = projectInfoQuery.data?.data.project_id ?? null;
-  const broadcastStatusQuery = useBroadcastStatusQuery(token, projectId);
-  const connectionTokenQuery = useCentrifugoConnectionTokenQuery(token);
+  const broadcastStatusQuery = useBroadcastStatusQuery(liveToken, projectId);
+  const connectionTokenQuery = useCentrifugoConnectionTokenQuery(liveToken);
 
   const liveBroadcastId = isLiveStatus(broadcastStatusQuery.data)
     ? broadcastStatusQuery.data.broadcast_id
@@ -119,11 +119,11 @@ export function useViewerWidget(): ViewerWidgetViewModel {
   }, [liveBroadcastId]);
 
   const broadcastChannelTokenQuery = useBroadcastChannelTokenQuery(
-    token,
+    liveToken,
     broadcastId,
   );
   const broadcastRestreamsQuery = useBroadcastRestreamsQuery(
-    token,
+    liveToken,
     broadcastId,
   );
 
@@ -151,7 +151,7 @@ export function useViewerWidget(): ViewerWidgetViewModel {
       }
       void queryClient.invalidateQueries({
         queryKey: viewerQueryKeys.broadcastRestreams(
-          token,
+          liveToken,
           payload.payload.broadcast_id,
         ),
       });
@@ -159,12 +159,12 @@ export function useViewerWidget(): ViewerWidgetViewModel {
   );
 
   useEffect(() => {
-    if (!token) return;
+    if (!liveToken || testMode) return;
 
     const client = new Centrifuge(
       `${import.meta.env.VITE_CENTRIFUGO_HOST}/connection/websocket`,
       {
-        getToken: getCentrifugoConnectionToken(token),
+        getToken: getCentrifugoConnectionToken(liveToken),
       },
     );
     clientRef.current = client;
@@ -173,7 +173,6 @@ export function useViewerWidget(): ViewerWidgetViewModel {
       setConnectionState((current) =>
         current === "error" ? current : "ready",
       );
-      setConnectionError(null);
     });
     client.on("connecting", () => {
       setConnectionState((current) =>
@@ -187,7 +186,7 @@ export function useViewerWidget(): ViewerWidgetViewModel {
     });
     client.on("error", (context) => {
       setConnectionState("error");
-      setConnectionError(
+      console.error(
         context.error?.message ?? "Failed to connect to Centrifugo.",
       );
     });
@@ -208,7 +207,7 @@ export function useViewerWidget(): ViewerWidgetViewModel {
       client.disconnect();
       clientRef.current = null;
     };
-  }, [token]);
+  }, [liveToken, testMode]);
 
   useEffect(() => {
     const client = clientRef.current;
@@ -258,7 +257,7 @@ export function useViewerWidget(): ViewerWidgetViewModel {
       console.log("data", payload);
 
       queryClient.setQueryData(
-        viewerQueryKeys.broadcastRestreams(token, payload.broadcast_id),
+        viewerQueryKeys.broadcastRestreams(liveToken, payload.broadcast_id),
         (
           current:
             | {
@@ -322,7 +321,7 @@ export function useViewerWidget(): ViewerWidgetViewModel {
         data?.event === "restreams.stopped"
       ) {
         void queryClient.invalidateQueries({
-          queryKey: viewerQueryKeys.broadcastRestreams(token, broadcastId),
+          queryKey: viewerQueryKeys.broadcastRestreams(liveToken, broadcastId),
         });
       }
     });
@@ -339,13 +338,22 @@ export function useViewerWidget(): ViewerWidgetViewModel {
     broadcastChannelTokenQuery.data?.access_token,
     broadcastId,
     queryClient,
-    token,
+    liveToken,
   ]);
 
   const channels = useMemo(
     () => buildChannels(broadcastRestreamsQuery.data, platformsQuery.data),
     [broadcastRestreamsQuery.data, platformsQuery.data],
   );
+
+  if (testMode) {
+    return {
+      channels: TEST_CHANNELS,
+      isStreamActive: true,
+      status: "ready",
+      totalViewers: TEST_CHANNELS.reduce((sum, channel) => sum + channel.viewer, 0),
+    };
+  }
 
   const totalViewers = channels.reduce(
     (sum, channel) => sum + channel.viewer,
@@ -373,28 +381,10 @@ export function useViewerWidget(): ViewerWidgetViewModel {
         ? "ready"
         : "offline";
 
-  const errorMessage =
-    connectionError ||
-    projectInfoQuery.error?.message ||
-    platformsQuery.error?.message ||
-    broadcastStatusQuery.error?.message ||
-    broadcastRestreamsQuery.error?.message ||
-    connectionTokenQuery.error?.message ||
-    broadcastChannelTokenQuery.error?.message ||
-    null;
-
   return {
     channels,
-    connectionLabel: getStatusLabel(
-      connectionState === "error" ? "error" : status,
-      broadcastId !== null,
-    ),
-    errorMessage,
-    isLoading,
     isStreamActive: broadcastId !== null,
-    project: projectInfoQuery.data?.data ?? null,
     status: connectionState === "error" ? "error" : status,
-    templateId,
     totalViewers,
   };
 }

@@ -1,7 +1,20 @@
 export interface WidgetQueryParams {
   templateId: string
   token: string
-  projectId: number | null
+}
+
+export function getMissingWidgetParams(params: Pick<WidgetQueryParams, 'templateId' | 'token'>): string[] {
+  const missingParams: string[] = []
+
+  if (!params.templateId) {
+    missingParams.push('template_id')
+  }
+
+  if (!params.token) {
+    missingParams.push('token')
+  }
+
+  return missingParams
 }
 
 export interface WidgetOptions {
@@ -10,6 +23,7 @@ export interface WidgetOptions {
   backgroundOpacity: number
   fontSize: number
   channelsSize: number
+  testMode: boolean
   showChannels: boolean
   channelsLayout: 'row' | 'column'
   showTotal: boolean
@@ -20,8 +34,9 @@ export const defaultWidgetOptions: WidgetOptions = {
   backgroundColor: '#09121d',
   textColor: '#f6f7fb',
   backgroundOpacity: 100,
-  fontSize: 76,
-  channelsSize: 18,
+  fontSize: 120,
+  channelsSize: 40,
+  testMode: false,
   showChannels: true,
   channelsLayout: 'row',
   showTotal: true,
@@ -52,6 +67,7 @@ export function getWidgetOptions(search: string): WidgetOptions {
     backgroundOpacity: defaultWidgetOptions.backgroundOpacity,
     fontSize: defaultWidgetOptions.fontSize,
     channelsSize: defaultWidgetOptions.channelsSize,
+    testMode: searchParams.get('test') === '1',
     showChannels: searchParams.get('channels') !== '0',
     channelsLayout: channelsLayout === 'column' ? 'column' : 'row',
     showTotal: searchParams.get('total') !== '0',
@@ -68,6 +84,7 @@ export function applyWidgetOptions(
   searchParams.set('opacity', String(options.backgroundOpacity))
   searchParams.set('size', String(options.fontSize))
   searchParams.set('channels_size', String(options.channelsSize))
+  searchParams.set('test', options.testMode ? '1' : '0')
   searchParams.set('channels', options.showChannels ? '1' : '0')
   searchParams.set('channels_layout', options.channelsLayout)
   searchParams.set('total', options.showTotal ? '1' : '0')
@@ -80,6 +97,5 @@ export function getWidgetQueryParams(search: string): WidgetQueryParams {
   return {
     templateId: searchParams.get('template_id') ?? '',
     token: searchParams.get('token') ?? '',
-    projectId: Number(searchParams.get('project_id') ?? '0') || null,
   }
 }

@@ -2,7 +2,9 @@ import type { CSSProperties } from 'react'
 import type { ViewerChannel } from './api/contracts'
 import {
   defaultWidgetOptions,
+  getMissingWidgetParams,
   getWidgetOptions,
+  getWidgetQueryParams,
   type WidgetOptions,
 } from './types'
 import { useViewerWidget } from './useViewerWidget'
@@ -45,10 +47,18 @@ function getWidgetCardStyle(options: WidgetOptions): CSSProperties {
     background: `rgb(${hexToRgbTriplet(options.backgroundColor)} / ${options.backgroundOpacity}%)`,
     borderColor: `rgb(${hexToRgbTriplet(options.textColor)} / 14%)`,
     color: options.textColor,
-    ['--minimal-font-size' as string]: `${options.fontSize}px`,
-    ['--minimal-icon-size' as string]: `${Math.max(20, Math.round(options.fontSize * 0.62))}px`,
-    ['--minimal-channel-font-size' as string]: `${options.channelsSize}px`,
-    ['--minimal-channel-icon-size' as string]: `${Math.max(16, Math.round(options.channelsSize * 1.2))}px`,
+    ['--widget-font-size' as string]: `clamp(24px, ${(
+      options.fontSize * 0.12
+    ).toFixed(2)}cqw, 50vh)`,
+    ['--widget-icon-size' as string]: `clamp(20px, ${(
+      options.fontSize * 0.07
+    ).toFixed(2)}cqw, 28vh)`,
+    ['--widget-channel-font-size' as string]: `clamp(10px, ${(
+      options.channelsSize * 0.1
+    ).toFixed(2)}cqw, 14vh)`,
+    ['--widget-channel-icon-size' as string]: `clamp(12px, ${(
+      options.channelsSize * 0.12
+    ).toFixed(2)}cqw, 16vh)`,
   }
 }
 
@@ -118,7 +128,27 @@ export function WidgetCard({
 }
 
 export function ViewerWidget() {
+  const widgetParams = getWidgetQueryParams(window.location.search)
+  const missingParams = getMissingWidgetParams(widgetParams)
   const { channels, isStreamActive, status, totalViewers } = useViewerWidget()
+
+  if (missingParams.length > 0) {
+    return (
+      <main className="app-shell app-shell-minimal">
+        <section className="widget-card widget-card-obs widget-card-minimal widget-card-notice">
+          <h2 className="widget-notice-title">Missing widget parameters</h2>
+          <p className="widget-notice-text">
+            Add
+            {' '}
+            {missingParams.join(', ')}
+            {' '}
+            to the URL before opening the widget.
+          </p>
+        </section>
+      </main>
+    )
+  }
+
   const formattedCount = isStreamActive ? formatViewerCount(totalViewers) : '—'
   const options = getWidgetOptions(window.location.search)
 

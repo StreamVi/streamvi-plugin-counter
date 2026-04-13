@@ -53,6 +53,23 @@
   background: rgb(255 255 255 / 5%);
 }
 
+.settings-notice {
+  max-width: 720px;
+}
+
+.settings-notice-title,
+.widget-notice-title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.settings-notice-text,
+.widget-notice-text {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
 .settings-link-input {
   grid-area: 1 / 1;
   width: 100%;
@@ -209,13 +226,15 @@
 
 .minimal-builder-preview {
   border-radius: 16px;
-  overflow: hidden;
 }
 
 .widget-card {
   width: min(100%, 360px);
-  display: grid;
-  gap: 18px;
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: 18px;
   border: 1px solid var(--color-surface-border);
   border-radius: 24px;
@@ -248,7 +267,7 @@
 }
 
 .minimal-value {
-  font-size: var(--minimal-font-size, clamp(2rem, 8vw, 3.2rem));
+  font-size: var(--widget-font-size, clamp(2rem, 8vw, 3.2rem));
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.05em;
@@ -268,6 +287,11 @@
 .widget-card-preview {
   min-height: 150px;
   padding: 22px;
+}
+
+.widget-card-notice {
+  justify-content: center;
+  align-items: flex-start;
 }
 
 .minimal-value-row {
@@ -294,20 +318,20 @@
 }
 
 .minimal-channel-item .channel-row-image {
-  width: var(--minimal-channel-icon-size, 20px);
-  height: var(--minimal-channel-icon-size, 20px);
+  width: var(--widget-channel-icon-size, 20px);
+  height: var(--widget-channel-icon-size, 20px);
   border-radius: 6px;
 }
 
 .minimal-channel-value {
-  font-size: var(--minimal-channel-font-size, 0.92rem);
+  font-size: var(--widget-channel-font-size, 0.92rem);
   font-weight: 700;
   line-height: 1;
 }
 
 .minimal-icon {
-  width: var(--minimal-icon-size, 32px);
-  height: var(--minimal-icon-size, 32px);
+  width: var(--widget-icon-size, 32px);
+  height: var(--widget-icon-size, 32px);
   flex-shrink: 0;
 }
 

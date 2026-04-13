@@ -51,6 +51,39 @@ function readHexColor(value: string | null, fallback: string): string {
   return /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback
 }
 
+function readNumberInRange(
+  value: string | null,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  if (value === null) {
+    return fallback
+  }
+
+  const parsed = Number(value)
+
+  if (!Number.isFinite(parsed)) {
+    return fallback
+  }
+
+  return Math.min(max, Math.max(min, parsed))
+}
+
+function syncSearchParam(
+  searchParams: URLSearchParams,
+  key: string,
+  value: string,
+  defaultValue: string,
+): void {
+  if (value === defaultValue) {
+    searchParams.delete(key)
+    return
+  }
+
+  searchParams.set(key, value)
+}
+
 export function getWidgetOptions(search: string): WidgetOptions {
   const searchParams = new URLSearchParams(search)
   const channelsLayout = searchParams.get('channels_layout')
@@ -64,9 +97,24 @@ export function getWidgetOptions(search: string): WidgetOptions {
       searchParams.get('text'),
       defaultWidgetOptions.textColor,
     ),
-    backgroundOpacity: defaultWidgetOptions.backgroundOpacity,
-    fontSize: defaultWidgetOptions.fontSize,
-    channelsSize: defaultWidgetOptions.channelsSize,
+    backgroundOpacity: readNumberInRange(
+      searchParams.get('opacity'),
+      defaultWidgetOptions.backgroundOpacity,
+      0,
+      100,
+    ),
+    fontSize: readNumberInRange(
+      searchParams.get('size'),
+      defaultWidgetOptions.fontSize,
+      20,
+      400,
+    ),
+    channelsSize: readNumberInRange(
+      searchParams.get('channels_size'),
+      defaultWidgetOptions.channelsSize,
+      8,
+      200,
+    ),
     testMode: searchParams.get('test') === '1',
     showChannels: searchParams.get('channels') !== '0',
     channelsLayout: channelsLayout === 'column' ? 'column' : 'row',
@@ -79,16 +127,66 @@ export function applyWidgetOptions(
   searchParams: URLSearchParams,
   options: WidgetOptions,
 ): void {
-  searchParams.set('bg', options.backgroundColor)
-  searchParams.set('text', options.textColor)
-  searchParams.set('opacity', String(options.backgroundOpacity))
-  searchParams.set('size', String(options.fontSize))
-  searchParams.set('channels_size', String(options.channelsSize))
-  searchParams.set('test', options.testMode ? '1' : '0')
-  searchParams.set('channels', options.showChannels ? '1' : '0')
-  searchParams.set('channels_layout', options.channelsLayout)
-  searchParams.set('total', options.showTotal ? '1' : '0')
-  searchParams.set('icon', options.showIcon ? '1' : '0')
+  syncSearchParam(
+    searchParams,
+    'bg',
+    options.backgroundColor,
+    defaultWidgetOptions.backgroundColor,
+  )
+  syncSearchParam(
+    searchParams,
+    'text',
+    options.textColor,
+    defaultWidgetOptions.textColor,
+  )
+  syncSearchParam(
+    searchParams,
+    'opacity',
+    String(options.backgroundOpacity),
+    String(defaultWidgetOptions.backgroundOpacity),
+  )
+  syncSearchParam(
+    searchParams,
+    'size',
+    String(options.fontSize),
+    String(defaultWidgetOptions.fontSize),
+  )
+  syncSearchParam(
+    searchParams,
+    'channels_size',
+    String(options.channelsSize),
+    String(defaultWidgetOptions.channelsSize),
+  )
+  syncSearchParam(
+    searchParams,
+    'test',
+    options.testMode ? '1' : '0',
+    defaultWidgetOptions.testMode ? '1' : '0',
+  )
+  syncSearchParam(
+    searchParams,
+    'channels',
+    options.showChannels ? '1' : '0',
+    defaultWidgetOptions.showChannels ? '1' : '0',
+  )
+  syncSearchParam(
+    searchParams,
+    'channels_layout',
+    options.channelsLayout,
+    defaultWidgetOptions.channelsLayout,
+  )
+  syncSearchParam(
+    searchParams,
+    'total',
+    options.showTotal ? '1' : '0',
+    defaultWidgetOptions.showTotal ? '1' : '0',
+  )
+  syncSearchParam(
+    searchParams,
+    'icon',
+    options.showIcon ? '1' : '0',
+    defaultWidgetOptions.showIcon ? '1' : '0',
+  )
 }
 
 export function getWidgetQueryParams(search: string): WidgetQueryParams {

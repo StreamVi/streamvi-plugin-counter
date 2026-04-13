@@ -59,6 +59,18 @@ function getWidgetCardStyle(options: WidgetOptions): CSSProperties {
     ['--widget-channel-icon-size' as string]: `clamp(12px, ${(
       options.channelsSize * 0.12
     ).toFixed(2)}cqw, 16vh)`,
+    ['--widget-stack-gap' as string]: `clamp(6px, ${(
+      Math.max(options.fontSize * 0.028, options.channelsSize * 0.08)
+    ).toFixed(2)}cqw, 24px)`,
+    ['--widget-value-gap' as string]: `clamp(6px, ${(
+      options.fontSize * 0.014
+    ).toFixed(2)}cqw, 14px)`,
+    ['--widget-channel-gap' as string]: `clamp(6px, ${(
+      options.channelsSize * 0.03
+    ).toFixed(2)}cqw, 12px)`,
+    ['--widget-channel-item-gap' as string]: `clamp(4px, ${(
+      options.channelsSize * 0.024
+    ).toFixed(2)}cqw, 10px)`,
   }
 }
 

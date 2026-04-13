@@ -280,7 +280,7 @@
 .widget-card-minimal {
   width: 100%;
   min-height: 100vh;
-  gap: 6px;
+  gap: var(--widget-stack-gap, 24px);
   padding: 18px;
 }
 
@@ -297,13 +297,14 @@
 .minimal-value-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--widget-value-gap, 12px);
 }
 
 .minimal-channel-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  column-gap: var(--widget-channel-gap, 10px);
+  row-gap: var(--widget-channel-gap, 10px);
 }
 
 .minimal-channel-list-column {
@@ -314,7 +315,7 @@
 .minimal-channel-item {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--widget-channel-item-gap, 8px);
 }
 
 .minimal-channel-item .channel-row-image {

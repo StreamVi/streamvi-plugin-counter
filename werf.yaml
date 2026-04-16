@@ -2,7 +2,7 @@ configVersion: 1
 project: plugin-counter
 ---
 image: nodejs_build
-from: node:24.15.0-alpine3.23
+from: node:2:24.14.1-alpine3.23
 git:
   - to: /var/www/nginx
     stageDependencies:

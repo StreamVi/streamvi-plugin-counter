@@ -1,0 +1,37 @@
+stages:
+  - build
+  - deploy
+  - cleanup
+
+### k8s
+variables:
+  WERF_VALUES_APP: .helm/values_app.yaml
+
+include:
+  - project: 'werf/base-werf'
+    file: '/.gitlab-ci-template.yml'
+
+.base_deploy: &base_deploy
+  stage: build
+  extends: .base_werf
+  script:
+    - gomplate -V -f .werf/values_${CI_ENVIRONMENT_NAME}.tmpl.yaml -o .helm/values_app.yaml
+    - werf build --dev
+    - werf render --dev
+    - werf converge --dev
+  tags:
+    - streamvi
+
+
+
+Deploy k8s prod:
+  <<: *base_deploy
+  environment:
+    name: prod
+  variables:
+    KUBECONFIG_BASE64: $STREAMVI_KUBECONFIG
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != "schedule"
+
+werf cleanup:
+  extends: .cleanup

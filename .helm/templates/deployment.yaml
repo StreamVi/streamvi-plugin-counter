@@ -1,0 +1,89 @@
+{{- range $k, $v := $.Values.deployments }}
+{{ $imageValue := index $.Values.werf.image $k }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "go-app.fullname" $ }}-{{ $k }}
+  labels:
+    {{- include "go-app.labels" $ | nindent 4 }}
+    app: {{ include "go-app.fullname" $ }}-{{ $k }}
+    {{- with $v.labels }}
+    {{ toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  replicas: {{ $v.replicaCount | default $.Values.default.replicaCount }}
+  strategy:
+    {{- toYaml $.Values.strategy | nindent 4 }}
+  selector:
+    matchLabels:
+      {{- include "go-app.selectorLabels" $ | nindent 6 }}
+      app: {{ include "go-app.fullname" $ }}-{{ $k }}
+  template:
+    metadata:
+      {{- with $v.podAnnotations | default $.Values.default.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "go-app.selectorLabels" $ | nindent 8 }}
+        app: {{ include "go-app.fullname" $ }}-{{ $k }}
+    spec:
+      volumes:
+        {{- toYaml $.Values.volumes | nindent 8 }}
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "go-app.serviceAccountName" $ }}
+      securityContext:
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ $.Chart.Name }}
+          securityContext:
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          image: '{{ $imageValue }}'
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          {{- with $v.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          args:
+          {{- range $v.command_args }}
+            - {{ . | quote }}
+          {{- end }}
+          env:
+            {{- range $key, $value := $.Values.app_env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- if .service.enabled }}
+          ports:
+            - name: {{ $v.service.name | default $.Values.default.service.name }}
+              containerPort: {{ $v.service.port | default $.Values.default.service.port }}
+              protocol: TCP
+          {{- end }}
+          {{- with $v.health_checks | default $.Values.default.health_checks }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          resources:
+            {{- if $v.resources }}
+            {{- toYaml $v.resources | nindent 12 }}
+            {{- else }}
+            {{- toYaml $.Values.default.resources | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            {{- toYaml $.Values.volumeMounts | nindent 12}}
+      {{- with $v.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $v.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $v.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

@@ -1,0 +1,25 @@
+{{- range $k, $v := $.Values.deployments }}
+{{- if .service.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "go-app.fullname" $ }}-{{ $k }}
+  labels:
+    {{- include "go-app.labels" $ | nindent 4 }}
+    app: {{ include "go-app.fullname" $ }}-{{ $k }}
+    {{- with $v.labels }}
+    {{ toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  type: {{ $v.service.type | default $.Values.default.service.type  }}
+  ports:
+    - port: {{ $v.service.port | default $.Values.default.service.port }}
+      targetPort: {{ $v.service.name | default $.Values.default.service.name }}
+      protocol: TCP
+      name: {{ $v.service.name | default $.Values.default.service.name }}
+  selector:
+    {{- include "go-app.selectorLabels" $ | nindent 4 }}
+    app: {{ include "go-app.fullname" $ }}-{{ $k }}
+{{- end }}
+{{- end }}

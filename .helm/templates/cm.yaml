@@ -1,0 +1,11 @@
+{{- if .Values.configmaps }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-conf
+  labels:
+   {{- include "go-app.labels" $ | nindent 4 }}
+data:
+{{- toYaml .Values.configmaps | nindent 2 }}
+{{- end }}

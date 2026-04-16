@@ -1,0 +1,30 @@
+configVersion: 1
+project: plugin-counter
+---
+image: nodejs_build
+from: node:24.15.0-alpine3.23
+git:
+  - to: /var/www/nginx
+    stageDependencies:
+      install:
+        - package*.json
+      setup:
+        - '**'
+        - '*'
+        - '**/*'
+shell:
+  beforeInstall:
+    - apk update && apk upgrade && mkdir -p /var/www/nginx
+  install:
+    - cd /var/www/nginx && npm i -g npm@11 && CI=false npm ci
+  setup:
+    - cd /var/www/nginx && npm run build
+
+---
+image: nginx
+from: nginx:1.28.3-alpine3.23
+import:
+  - image: nodejs_build
+    add: /var/www/nginx/dist
+    to: /var/www/public
+    before: setup

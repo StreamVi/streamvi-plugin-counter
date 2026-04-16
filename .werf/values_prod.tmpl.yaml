@@ -42,13 +42,13 @@ ingress:
     cloudflare-dns: 'true'
     external-dns.alpha.kubernetes.io/cloudflare-proxied: 'false'
   hosts:
-    - host: 'ui.{{ .Env.KUBE_DOMAIN_PROD }}'
+    - host: 'plugin-counter.{{ .Env.KUBE_DOMAIN_PROD }}'
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls:
     - hosts:
-        - 'ui.{{ .Env.KUBE_DOMAIN_PROD }}'
+        - 'plugin-counter.{{ .Env.KUBE_DOMAIN_PROD }}'
 
 secrets: []
 configmaps:

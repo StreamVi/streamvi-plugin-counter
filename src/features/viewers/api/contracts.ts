@@ -1,3 +1,5 @@
+import type { WidgetOptions, WidgetPayload } from '../types'
+
 export interface ProjectInfoDataResponse {
   project_id: number
 }
@@ -74,6 +76,18 @@ export type CentrifugoBroadcastEventResponseUnionEvent =
   | CentrifugoBroadcastViewsResponse
   | CentrifugoBroadcastRestreamsResponse
 
+export interface CentrifugoWidgetTemplatePayloadResponse {
+  event: 'widget-template-payload'
+  payload: WidgetPayload | null
+}
+
+export interface IntegrationTemplateWidgetResponse {
+  payload?: WidgetPayload | null
+  data?: {
+    payload?: WidgetPayload | null
+  } | null
+}
+
 export interface ViewerChannel {
   restream_id: number
   platform_icon_url: string | null
@@ -84,6 +98,7 @@ export interface ViewerChannel {
 export interface ViewerWidgetViewModel {
   channels: ViewerChannel[]
   isStreamActive: boolean
+  options: WidgetOptions
   status: 'loading' | 'ready' | 'offline' | 'error'
   totalViewers: number
 }

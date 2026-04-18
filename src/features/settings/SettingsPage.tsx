@@ -1,18 +1,21 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { WidgetCard } from '../viewers/ViewerWidget'
 import {
-  getMissingWidgetParams,
+  createWidgetPayload,
   getWidgetOptions,
+  getWidgetOptionsFromPayload,
   getWidgetQueryParams,
+  type WidgetPayload,
   type WidgetOptions,
 } from '../viewers/types'
 import { SettingsControls } from './components/SettingsControls'
 import { SettingsUrlField } from './components/SettingsUrlField'
 import { buildObsUrl } from './lib/build-obs-url'
 import { previewChannels } from './preview-data'
+import { useCabinetBridge } from './useCabinetBridge'
 
 export function SettingsPage() {
-  const widgetParams = useMemo(
+  const initialWidgetParams = useMemo(
     () => getWidgetQueryParams(window.location.search),
     [],
   )
@@ -20,8 +23,21 @@ export function SettingsPage() {
     getWidgetOptions(window.location.search),
   )
   const [isCopied, setIsCopied] = useState(false)
-  const obsUrl = useMemo(() => buildObsUrl(options), [options])
-  const missingParams = getMissingWidgetParams(widgetParams)
+  const bridgePayload = useMemo(() => createWidgetPayload(options), [options])
+  const obsUrl = useMemo(
+    () => buildObsUrl(initialWidgetParams),
+    [initialWidgetParams],
+  )
+
+  const handleSyncPayload = useCallback((payload: WidgetPayload) => {
+    const nextOptions = getWidgetOptionsFromPayload(payload)
+    setOptions(nextOptions)
+  }, [])
+
+  useCabinetBridge({
+    payload: bridgePayload,
+    onSyncPayload: handleSyncPayload,
+  })
 
   async function handleCopyClick() {
     await navigator.clipboard.writeText(obsUrl)
@@ -35,13 +51,13 @@ export function SettingsPage() {
         <h1 className="settings-title">Viewer counter for OBS</h1>
       </div>
 
-      {missingParams.length > 0 ? (
+      {initialWidgetParams.templateId === '' || initialWidgetParams.token === '' ? (
         <section className="settings-panel settings-notice">
           <h2 className="settings-notice-title">Missing widget parameters</h2>
           <p className="settings-notice-text">
             Open this page with the required query parameters:
             {' '}
-            {missingParams.join(', ')}.
+            ?template_id=YOUR_TEMPLATE_ID&token=YOUR_TOKEN.
           </p>
           <p className="settings-notice-text">
             Example:

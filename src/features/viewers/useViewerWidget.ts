@@ -1,75 +1,104 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import type {
   CentrifugoBroadcastEventResponseUnionEvent,
   CentrifugoStreamEndResponse,
   CentrifugoStreamStartResponse,
   MethodBroadcastRestreamItemResponse,
+  SiteBroadcastControllerStatus0200Response,
   ViewerWidgetViewModel,
 } from './api/contracts'
 import {
   useBroadcastChannelTokenQuery,
   useBroadcastRestreamsQuery,
   useBroadcastStatusQuery,
+  useChannelTokenQuery,
   useCentrifugoConnectionTokenQuery,
   usePlatformsQuery,
   useProjectInfoQuery,
+  useTemplateWidgetQuery,
   viewerQueryKeys,
 } from './queries'
-import { getWidgetOptions, getWidgetQueryParams } from './types'
+import {
+  defaultWidgetOptions,
+  getWidgetOptionsFromPayload,
+  getWidgetQueryParams,
+  type WidgetPayload,
+} from './types'
 import { buildChannels } from './lib/build-channels'
 import { isLiveStatus } from './lib/is-live-status'
-import { TEST_CHANNELS } from './lib/test-channels'
 import { useBroadcastSubscription } from './realtime/use-broadcast-subscription'
 import { useCentrifugoClient } from './realtime/use-centrifugo-client'
 import { useProjectSubscription } from './realtime/use-project-subscription'
+import { useWidgetTemplateSubscription } from './realtime/use-widget-template-subscription'
+import { useAnimatedTestChannels } from './useAnimatedTestChannels'
+
+function normalizeWidgetPayload(payload: WidgetPayload | null): WidgetPayload | null {
+  if (!payload) {
+    return null
+  }
+
+  return payload
+}
 
 export function useViewerWidget(): ViewerWidgetViewModel {
   const queryClient = useQueryClient()
-  const { token } = useMemo(() => getWidgetQueryParams(window.location.search), [])
-  const { testMode } = useMemo(() => getWidgetOptions(window.location.search), [])
-  const liveToken = testMode ? '' : token
-  const [broadcastId, setBroadcastId] = useState<number | null>(null)
+  const { templateId, token } = useMemo(() => getWidgetQueryParams(window.location.search), [])
+  const baseOptions = defaultWidgetOptions
 
+  const templateWidgetQuery = useTemplateWidgetQuery(token, templateId)
+  const templatePayload = normalizeWidgetPayload(templateWidgetQuery.data ?? null)
+  const options = useMemo(
+    () => (templatePayload ? getWidgetOptionsFromPayload(templatePayload) : baseOptions),
+    [baseOptions, templatePayload],
+  )
+  const isTemplateSettingsResolved =
+    templateWidgetQuery.isSuccess || templateWidgetQuery.isError
+  const testMode = options.testMode
+  const liveToken = isTemplateSettingsResolved && !testMode ? token : ''
   const projectInfoQuery = useProjectInfoQuery(liveToken)
   const platformsQuery = usePlatformsQuery(liveToken)
   const projectId = projectInfoQuery.data?.data.project_id ?? null
   const broadcastStatusQuery = useBroadcastStatusQuery(liveToken, projectId)
-  const connectionTokenQuery = useCentrifugoConnectionTokenQuery(liveToken)
+  const broadcastId =
+    testMode || !isLiveStatus(broadcastStatusQuery.data)
+      ? null
+      : broadcastStatusQuery.data.broadcast_id
+  const connectionTokenQuery = useCentrifugoConnectionTokenQuery(token)
   const { clientRef, connectionState } = useCentrifugoClient({
-    liveToken,
-    testMode,
+    token,
   })
-
-  const liveBroadcastId = isLiveStatus(broadcastStatusQuery.data)
-    ? broadcastStatusQuery.data.broadcast_id
-    : null
-
-  useEffect(() => {
-    setBroadcastId(liveBroadcastId)
-  }, [liveBroadcastId])
+  const testChannelsState = useAnimatedTestChannels(testMode)
 
   const broadcastChannelTokenQuery = useBroadcastChannelTokenQuery(liveToken, broadcastId)
+  const templateChannelName = templateId ? `$widget_template:${templateId}` : null
+  const templateChannelTokenQuery = useChannelTokenQuery(token, templateChannelName)
   const broadcastRestreamsQuery = useBroadcastRestreamsQuery(liveToken, broadcastId)
 
   const handleProjectEvent = useCallback(
     (payload: CentrifugoStreamStartResponse | CentrifugoStreamEndResponse) => {
-      if (payload.event === 'stream-end') {
-        setBroadcastId(null)
-        if (projectId !== null) {
-          void queryClient.invalidateQueries({
-            queryKey: viewerQueryKeys.broadcastStatus(token, projectId),
-          })
-        }
+      if (projectId === null) {
         return
       }
 
-      setBroadcastId(payload.payload.broadcast_id)
-      if (projectId !== null) {
+      if (payload.event === 'stream-end') {
+        queryClient.setQueryData<SiteBroadcastControllerStatus0200Response>(
+          viewerQueryKeys.broadcastStatus(token, projectId),
+          { status: 'offline' },
+        )
         void queryClient.invalidateQueries({
           queryKey: viewerQueryKeys.broadcastStatus(token, projectId),
         })
+        return
       }
+
+      queryClient.setQueryData<SiteBroadcastControllerStatus0200Response>(
+        viewerQueryKeys.broadcastStatus(token, projectId),
+        { broadcast_id: payload.payload.broadcast_id },
+      )
+      void queryClient.invalidateQueries({
+        queryKey: viewerQueryKeys.broadcastStatus(token, projectId),
+      })
       void queryClient.invalidateQueries({
         queryKey: viewerQueryKeys.broadcastRestreams(
           liveToken,
@@ -135,6 +164,35 @@ export function useViewerWidget(): ViewerWidgetViewModel {
     },
   })
 
+  const handleTemplatePayload = useCallback((payload: WidgetPayload | null) => {
+    if (!templateId) {
+      return
+    }
+
+    queryClient.setQueryData(
+      viewerQueryKeys.templateWidget(token, templateId),
+      normalizeWidgetPayload(payload),
+    )
+  }, [queryClient, templateId, token])
+
+  const handleTemplateChange = useCallback(() => {
+    if (!templateId) {
+      return
+    }
+
+    void queryClient.invalidateQueries({
+      queryKey: viewerQueryKeys.templateWidget(token, templateId),
+    })
+  }, [queryClient, templateId, token])
+
+  useWidgetTemplateSubscription({
+    accessToken: templateChannelTokenQuery.data?.access_token,
+    channelName: templateChannelName ?? '',
+    clientRef,
+    onTemplateChange: handleTemplateChange,
+    onTemplatePayload: handleTemplatePayload,
+  })
+
   const channels = useMemo(
     () => buildChannels(broadcastRestreamsQuery.data, platformsQuery.data),
     [broadcastRestreamsQuery.data, platformsQuery.data],
@@ -142,27 +200,33 @@ export function useViewerWidget(): ViewerWidgetViewModel {
 
   if (testMode) {
     return {
-      channels: TEST_CHANNELS,
+      channels: testChannelsState.channels,
       isStreamActive: true,
+      options,
       status: 'ready',
-      totalViewers: TEST_CHANNELS.reduce((sum, channel) => sum + channel.viewer, 0),
+      totalViewers: testChannelsState.totalViewers,
     }
   }
 
   const totalViewers = channels.reduce((sum, channel) => sum + channel.viewer, 0)
   const isLoading =
-    projectInfoQuery.isLoading ||
-    platformsQuery.isLoading ||
-    broadcastStatusQuery.isLoading ||
-    (broadcastId !== null && broadcastRestreamsQuery.isLoading)
+    templateWidgetQuery.isLoading ||
+    (!testMode &&
+      (projectInfoQuery.isLoading ||
+        platformsQuery.isLoading ||
+        broadcastStatusQuery.isLoading ||
+        (broadcastId !== null && broadcastRestreamsQuery.isLoading)))
 
   const hasError =
-    projectInfoQuery.isError ||
-    platformsQuery.isError ||
-    broadcastStatusQuery.isError ||
-    broadcastRestreamsQuery.isError ||
+    templateWidgetQuery.isError ||
     connectionTokenQuery.isError ||
-    broadcastChannelTokenQuery.isError
+    templateChannelTokenQuery.isError ||
+    (!testMode &&
+      (projectInfoQuery.isError ||
+        platformsQuery.isError ||
+        broadcastStatusQuery.isError ||
+        broadcastRestreamsQuery.isError ||
+        broadcastChannelTokenQuery.isError))
 
   const status: ViewerWidgetViewModel['status'] = hasError
     ? 'error'
@@ -175,6 +239,7 @@ export function useViewerWidget(): ViewerWidgetViewModel {
   return {
     channels,
     isStreamActive: broadcastId !== null,
+    options,
     status: connectionState === 'error' ? 'error' : status,
     totalViewers,
   }

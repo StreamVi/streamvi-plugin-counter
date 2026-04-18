@@ -4,28 +4,26 @@ import type { ViewerWidgetViewModel } from '../api/contracts'
 import { getCentrifugoConnectionToken } from '../api/client'
 
 interface UseCentrifugoClientOptions {
-  liveToken: string
-  testMode: boolean
+  token: string
 }
 
 export function useCentrifugoClient({
-  liveToken,
-  testMode,
+  token,
 }: UseCentrifugoClientOptions) {
   const clientRef = useRef<Centrifuge | null>(null)
   const [connectionState, setConnectionState] = useState<ViewerWidgetViewModel['status']>(
-    testMode ? 'ready' : liveToken ? 'loading' : 'error',
+    token ? 'loading' : 'error',
   )
 
   useEffect(() => {
-    if (!liveToken || testMode) {
+    if (!token) {
       return
     }
 
     const client = new Centrifuge(
       `${import.meta.env.VITE_CENTRIFUGO_HOST}/connection/websocket`,
       {
-        getToken: getCentrifugoConnectionToken(liveToken),
+        getToken: getCentrifugoConnectionToken(token),
       },
     )
 
@@ -51,7 +49,7 @@ export function useCentrifugoClient({
       client.disconnect()
       clientRef.current = null
     }
-  }, [liveToken, testMode])
+  }, [token])
 
   return {
     clientRef,

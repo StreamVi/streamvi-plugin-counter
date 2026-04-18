@@ -3,11 +3,13 @@ import { config } from '../../../config'
 import type {
   CentrifugoChannelAccessTokenResponse,
   CentrifugoConnectionAccessTokenResponse,
+  IntegrationTemplateWidgetResponse,
   MethodBroadcastRestreamsResponse,
   ProjectInfoResponse,
   SiteBroadcastControllerStatus0200Response,
   SitePlatformsSupportedResponse,
 } from './contracts'
+import type { WidgetPayload } from '../types'
 
 const http = axios.create({
   baseURL: config.apiHost,
@@ -36,19 +38,26 @@ export const getCentrifugoConnectionToken = (tokenId: string) => async () => {
   return data.access_token
 }
 
-export async function getBroadcastChannelToken(
+export async function getChannelToken(
   tokenId: string,
-  broadcastId: number,
+  channelName: string,
 ): Promise<CentrifugoChannelAccessTokenResponse> {
   const { data } = await http.get<CentrifugoChannelAccessTokenResponse>('/method/centrifuge/auth/channel', {
     params: {
-      channel_name: `$broadcast:${broadcastId}`,
+      channel_name: channelName,
       widget: tokenId,
       v: '1',
     },
   })
 
   return data
+}
+
+export async function getBroadcastChannelToken(
+  tokenId: string,
+  broadcastId: number,
+): Promise<CentrifugoChannelAccessTokenResponse> {
+  return getChannelToken(tokenId, `$broadcast:${broadcastId}`)
 }
 
 export async function getBroadcastStatus(
@@ -100,4 +109,23 @@ export async function getPlatforms(tokenId: string): Promise<SitePlatformsSuppor
   })
 
   return data
+}
+
+export async function getTemplateWidget(
+  tokenId: string,
+  templateId: string,
+): Promise<WidgetPayload | null> {
+  const { data } = await http.get<IntegrationTemplateWidgetResponse>(
+    '/method/integration-template/widget/get',
+    {
+      params: {
+        template_id: templateId,
+        widget: tokenId,
+        v: '1',
+        language: 'ru',
+      },
+    },
+  )
+
+  return data.payload ?? data.data?.payload ?? null
 }

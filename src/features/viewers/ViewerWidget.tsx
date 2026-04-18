@@ -2,8 +2,6 @@ import type { CSSProperties } from 'react'
 import type { ViewerChannel } from './api/contracts'
 import {
   defaultWidgetOptions,
-  getMissingWidgetParams,
-  getWidgetOptions,
   getWidgetQueryParams,
   type WidgetOptions,
 } from './types'
@@ -141,10 +139,9 @@ export function WidgetCard({
 
 export function ViewerWidget() {
   const widgetParams = getWidgetQueryParams(window.location.search)
-  const missingParams = getMissingWidgetParams(widgetParams)
-  const { channels, isStreamActive, status, totalViewers } = useViewerWidget()
+  const { channels, isStreamActive, options, status, totalViewers } = useViewerWidget()
 
-  if (missingParams.length > 0) {
+  if (widgetParams.templateId === '' || widgetParams.token === '') {
     return (
       <main className="app-shell app-shell-minimal">
         <section className="widget-card widget-card-obs widget-card-minimal widget-card-notice">
@@ -152,7 +149,7 @@ export function ViewerWidget() {
           <p className="widget-notice-text">
             Add
             {' '}
-            {missingParams.join(', ')}
+            ?template_id=YOUR_TEMPLATE_ID&token=YOUR_TOKEN
             {' '}
             to the URL before opening the widget.
           </p>
@@ -162,7 +159,6 @@ export function ViewerWidget() {
   }
 
   const formattedCount = isStreamActive ? formatViewerCount(totalViewers) : '—'
-  const options = getWidgetOptions(window.location.search)
 
   return (
     <main className="app-shell app-shell-minimal">

@@ -1,22 +1,20 @@
-import { applyWidgetOptions, type WidgetOptions } from '../../viewers/types'
+import {
+  type WidgetQueryParams,
+} from '../../viewers/types'
 
-export function buildObsUrl(options: WidgetOptions): string {
-  const currentUrl = new URL(window.location.href)
+export function buildObsUrl(
+  queryParams: WidgetQueryParams,
+): string {
   const url = new URL(window.location.origin)
   url.pathname = '/obs'
 
-  const templateId = currentUrl.searchParams.get('template_id')
-  const token = currentUrl.searchParams.get('token')
-
-  if (templateId) {
-    url.searchParams.set('template_id', templateId)
+  if (queryParams.templateId) {
+    url.searchParams.set('template_id', queryParams.templateId)
   }
 
-  if (token) {
-    url.searchParams.set('token', token)
+  if (queryParams.token) {
+    url.searchParams.set('token', queryParams.token)
   }
-
-  applyWidgetOptions(url.searchParams, options)
 
   return url.toString()
 }

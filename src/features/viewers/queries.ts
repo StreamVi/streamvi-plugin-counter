@@ -3,9 +3,11 @@ import {
   getBroadcastRestreams,
   getBroadcastStatus,
   getCentrifugoConnectionToken,
-  getProjectInfo,
   getBroadcastChannelToken,
+  getChannelToken,
   getPlatforms,
+  getProjectInfo,
+  getTemplateWidget,
 } from './api/client'
 
 export const viewerQueryKeys = {
@@ -17,8 +19,12 @@ export const viewerQueryKeys = {
     ['viewer-widget', 'broadcast-status', tokenId, projectId] as const,
   centrifugoConnectionToken: (tokenId: string) =>
     ['viewer-widget', 'centrifugo-connection-token', tokenId] as const,
+  channelToken: (tokenId: string, channelName: string) =>
+    ['viewer-widget', 'channel-token', tokenId, channelName] as const,
   platforms: (tokenId: string) => ['viewer-widget', 'platforms', tokenId] as const,
   projectInfo: (tokenId: string) => ['viewer-widget', 'project-info', tokenId] as const,
+  templateWidget: (tokenId: string, templateId: string) =>
+    ['viewer-widget', 'template-widget', tokenId, templateId] as const,
 }
 
 export function useProjectInfoQuery(tokenId: string) {
@@ -75,6 +81,24 @@ export function useBroadcastChannelTokenQuery(
     enabled: Boolean(tokenId) && broadcastId !== null,
     queryFn: () => getBroadcastChannelToken(tokenId, broadcastId as number),
     queryKey: viewerQueryKeys.broadcastChannelToken(tokenId, broadcastId as number),
+    staleTime: 60_000,
+  })
+}
+
+export function useChannelTokenQuery(tokenId: string, channelName: string | null) {
+  return useQuery({
+    enabled: Boolean(tokenId) && Boolean(channelName),
+    queryFn: () => getChannelToken(tokenId, channelName as string),
+    queryKey: viewerQueryKeys.channelToken(tokenId, channelName as string),
+    staleTime: 60_000,
+  })
+}
+
+export function useTemplateWidgetQuery(tokenId: string, templateId: string) {
+  return useQuery({
+    enabled: Boolean(tokenId) && Boolean(templateId),
+    queryFn: () => getTemplateWidget(tokenId, templateId),
+    queryKey: viewerQueryKeys.templateWidget(tokenId, templateId),
     staleTime: 60_000,
   })
 }

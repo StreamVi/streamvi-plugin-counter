@@ -3,6 +3,19 @@ export interface WidgetQueryParams {
   token: string
 }
 
+export interface WidgetPayload {
+  bg?: string
+  text?: string
+  opacity?: number
+  size?: number
+  channels_size?: number
+  test?: boolean
+  channels?: boolean
+  channels_layout?: 'row' | 'column'
+  total?: boolean
+  icon?: boolean
+}
+
 export function getMissingWidgetParams(params: Pick<WidgetQueryParams, 'templateId' | 'token'>): string[] {
   const missingParams: string[] = []
 
@@ -51,6 +64,10 @@ function readHexColor(value: string | null, fallback: string): string {
   return /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback
 }
 
+function readHexColorValue(value: unknown, fallback: string): string {
+  return typeof value === 'string' ? readHexColor(value, fallback) : fallback
+}
+
 function readNumberInRange(
   value: string | null,
   fallback: number,
@@ -68,6 +85,46 @@ function readNumberInRange(
   }
 
   return Math.min(max, Math.max(min, parsed))
+}
+
+function readNumberValue(
+  value: unknown,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.min(max, Math.max(min, value))
+  }
+
+  if (typeof value === 'string') {
+    return readNumberInRange(value, fallback, min, max)
+  }
+
+  return fallback
+}
+
+function readBooleanValue(value: unknown, fallback: boolean): boolean {
+  if (typeof value === 'boolean') {
+    return value
+  }
+
+  if (value === '1') {
+    return true
+  }
+
+  if (value === '0') {
+    return false
+  }
+
+  return fallback
+}
+
+function readChannelsLayoutValue(
+  value: unknown,
+  fallback: WidgetOptions['channelsLayout'],
+): WidgetOptions['channelsLayout'] {
+  return value === 'column' ? 'column' : value === 'row' ? 'row' : fallback
 }
 
 function syncSearchParam(
@@ -120,6 +177,48 @@ export function getWidgetOptions(search: string): WidgetOptions {
     channelsLayout: channelsLayout === 'column' ? 'column' : 'row',
     showTotal: searchParams.get('total') !== '0',
     showIcon: searchParams.get('icon') === '1',
+  }
+}
+
+export function getWidgetOptionsFromPayload(payload: WidgetPayload): WidgetOptions {
+  return {
+    backgroundColor: readHexColorValue(
+      payload.bg,
+      defaultWidgetOptions.backgroundColor,
+    ),
+    textColor: readHexColorValue(
+      payload.text,
+      defaultWidgetOptions.textColor,
+    ),
+    backgroundOpacity: readNumberValue(
+      payload.opacity,
+      defaultWidgetOptions.backgroundOpacity,
+      0,
+      100,
+    ),
+    fontSize: readNumberValue(
+      payload.size,
+      defaultWidgetOptions.fontSize,
+      20,
+      400,
+    ),
+    channelsSize: readNumberValue(
+      payload.channels_size,
+      defaultWidgetOptions.channelsSize,
+      8,
+      200,
+    ),
+    testMode: readBooleanValue(payload.test, defaultWidgetOptions.testMode),
+    showChannels: readBooleanValue(
+      payload.channels,
+      defaultWidgetOptions.showChannels,
+    ),
+    channelsLayout: readChannelsLayoutValue(
+      payload.channels_layout,
+      defaultWidgetOptions.channelsLayout,
+    ),
+    showTotal: readBooleanValue(payload.total, defaultWidgetOptions.showTotal),
+    showIcon: readBooleanValue(payload.icon, defaultWidgetOptions.showIcon),
   }
 }
 
@@ -196,4 +295,50 @@ export function getWidgetQueryParams(search: string): WidgetQueryParams {
     templateId: searchParams.get('template_id') ?? '',
     token: searchParams.get('token') ?? '',
   }
+}
+
+export function createWidgetPayload(options: WidgetOptions): WidgetPayload {
+  const payload: WidgetPayload = {}
+
+  if (options.backgroundColor !== defaultWidgetOptions.backgroundColor) {
+    payload.bg = options.backgroundColor
+  }
+
+  if (options.textColor !== defaultWidgetOptions.textColor) {
+    payload.text = options.textColor
+  }
+
+  if (options.backgroundOpacity !== defaultWidgetOptions.backgroundOpacity) {
+    payload.opacity = options.backgroundOpacity
+  }
+
+  if (options.fontSize !== defaultWidgetOptions.fontSize) {
+    payload.size = options.fontSize
+  }
+
+  if (options.channelsSize !== defaultWidgetOptions.channelsSize) {
+    payload.channels_size = options.channelsSize
+  }
+
+  if (options.testMode !== defaultWidgetOptions.testMode) {
+    payload.test = options.testMode
+  }
+
+  if (options.showChannels !== defaultWidgetOptions.showChannels) {
+    payload.channels = options.showChannels
+  }
+
+  if (options.channelsLayout !== defaultWidgetOptions.channelsLayout) {
+    payload.channels_layout = options.channelsLayout
+  }
+
+  if (options.showTotal !== defaultWidgetOptions.showTotal) {
+    payload.total = options.showTotal
+  }
+
+  if (options.showIcon !== defaultWidgetOptions.showIcon) {
+    payload.icon = options.showIcon
+  }
+
+  return payload
 }

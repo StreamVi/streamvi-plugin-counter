@@ -31,7 +31,7 @@ export async function getProjectInfo(tokenId: string): Promise<ProjectInfoRespon
   return data
 }
 
-export const getCentrifugoConnectionToken = (tokenId: string) => async () => {
+export async function fetchCentrifugoConnectionToken(tokenId: string): Promise<string> {
   const { data } = await http.get<CentrifugoConnectionAccessTokenResponse>('/method/centrifuge/auth/connect', {
     params: {
       widget: tokenId,
@@ -42,6 +42,9 @@ export const getCentrifugoConnectionToken = (tokenId: string) => async () => {
 
   return data.access_token
 }
+
+export const createCentrifugoConnectionTokenGetter = (tokenId: string) => () =>
+  fetchCentrifugoConnectionToken(tokenId)
 
 export async function getChannelToken(
   tokenId: string,

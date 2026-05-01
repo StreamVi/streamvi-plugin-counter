@@ -16,6 +16,43 @@ export interface WidgetPayload {
   icon?: boolean
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function isOptionalString(value: unknown): boolean {
+  return value === undefined || typeof value === 'string'
+}
+
+function isOptionalFiniteNumber(value: unknown): boolean {
+  return value === undefined || (typeof value === 'number' && Number.isFinite(value))
+}
+
+function isOptionalBoolean(value: unknown): boolean {
+  return value === undefined || typeof value === 'boolean'
+}
+
+export function isWidgetPayload(value: unknown): value is WidgetPayload {
+  if (!isRecord(value)) {
+    return false
+  }
+
+  return (
+    isOptionalString(value.bg) &&
+    isOptionalString(value.text) &&
+    isOptionalFiniteNumber(value.opacity) &&
+    isOptionalFiniteNumber(value.size) &&
+    isOptionalFiniteNumber(value.channels_size) &&
+    isOptionalBoolean(value.test) &&
+    isOptionalBoolean(value.channels) &&
+    (value.channels_layout === undefined ||
+      value.channels_layout === 'row' ||
+      value.channels_layout === 'column') &&
+    isOptionalBoolean(value.total) &&
+    isOptionalBoolean(value.icon)
+  )
+}
+
 export function getMissingWidgetParams(params: Pick<WidgetQueryParams, 'templateId' | 'token'>): string[] {
   const missingParams: string[] = []
 

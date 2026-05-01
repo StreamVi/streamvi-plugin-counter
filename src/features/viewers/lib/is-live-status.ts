@@ -1,8 +1,10 @@
-import type { SiteBroadcastStatusLiveResponse } from '../api/contracts'
-import type { useBroadcastStatusQuery } from '../queries'
+import type {
+  SiteBroadcastControllerStatus0200Response,
+  SiteBroadcastStatusLiveResponse,
+} from '../api/contracts'
 
 export function isLiveStatus(
-  value: ReturnType<typeof useBroadcastStatusQuery>['data'],
+  value: SiteBroadcastControllerStatus0200Response | undefined,
 ): value is SiteBroadcastStatusLiveResponse {
   return Boolean(value && 'broadcast_id' in value)
 }

@@ -5,6 +5,10 @@ import type {
   CentrifugoStreamEndResponse,
   CentrifugoStreamStartResponse,
 } from '../api/contracts'
+import {
+  isCentrifugoStreamEndEvent,
+  isCentrifugoStreamStartEvent,
+} from './guards'
 
 interface UseProjectSubscriptionOptions {
   clientRef: RefObject<Centrifuge | null>
@@ -36,16 +40,13 @@ export function useProjectSubscription({
     subscriptionRef.current = subscription
 
     subscription.on('publication', (context) => {
-      const data = context.data as
-        | Partial<CentrifugoStreamStartResponse | CentrifugoStreamEndResponse>
-        | undefined
-
-      if (data?.event === 'stream-start' && data.payload) {
-        onProjectEvent(data as CentrifugoStreamStartResponse)
+      if (isCentrifugoStreamStartEvent(context.data)) {
+        onProjectEvent(context.data)
+        return
       }
 
-      if (data?.event === 'stream-end') {
-        onProjectEvent({ event: 'stream-end' })
+      if (isCentrifugoStreamEndEvent(context.data)) {
+        onProjectEvent(context.data)
       }
     })
 

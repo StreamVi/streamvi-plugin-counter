@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
 import type {
-  CentrifugoBroadcastEventResponseUnionEvent,
+  CentrifugoBroadcastViewsResponse,
   CentrifugoStreamEndResponse,
   CentrifugoStreamStartResponse,
   MethodBroadcastRestreamItemResponse,
@@ -13,7 +13,6 @@ import {
   useBroadcastRestreamsQuery,
   useBroadcastStatusQuery,
   useChannelTokenQuery,
-  useCentrifugoConnectionTokenQuery,
   usePlatformsQuery,
   useProjectInfoQuery,
   useTemplateWidgetQuery,
@@ -22,8 +21,8 @@ import {
 import {
   defaultWidgetOptions,
   getWidgetOptionsFromPayload,
-  getWidgetQueryParams,
   type WidgetPayload,
+  type WidgetQueryParams,
 } from './types'
 import { buildChannels } from './lib/build-channels'
 import { isLiveStatus } from './lib/is-live-status'
@@ -33,24 +32,17 @@ import { useProjectSubscription } from './realtime/use-project-subscription'
 import { useWidgetTemplateSubscription } from './realtime/use-widget-template-subscription'
 import { useAnimatedTestChannels } from './useAnimatedTestChannels'
 
-function normalizeWidgetPayload(payload: WidgetPayload | null): WidgetPayload | null {
-  if (!payload) {
-    return null
-  }
-
-  return payload
-}
-
-export function useViewerWidget(): ViewerWidgetViewModel {
+export function useViewerWidget({
+  templateId,
+  token,
+}: WidgetQueryParams): ViewerWidgetViewModel {
   const queryClient = useQueryClient()
-  const { templateId, token } = useMemo(() => getWidgetQueryParams(window.location.search), [])
-  const baseOptions = defaultWidgetOptions
 
   const templateWidgetQuery = useTemplateWidgetQuery(token, templateId)
-  const templatePayload = normalizeWidgetPayload(templateWidgetQuery.data ?? null)
+  const templatePayload = templateWidgetQuery.data ?? null
   const options = useMemo(
-    () => (templatePayload ? getWidgetOptionsFromPayload(templatePayload) : baseOptions),
-    [baseOptions, templatePayload],
+    () => (templatePayload ? getWidgetOptionsFromPayload(templatePayload) : defaultWidgetOptions),
+    [templatePayload],
   )
   const isTemplateSettingsResolved =
     templateWidgetQuery.isSuccess || templateWidgetQuery.isError
@@ -64,7 +56,6 @@ export function useViewerWidget(): ViewerWidgetViewModel {
     testMode || !isLiveStatus(broadcastStatusQuery.data)
       ? null
       : broadcastStatusQuery.data.broadcast_id
-  const connectionTokenQuery = useCentrifugoConnectionTokenQuery(token)
   const { clientRef, connectionState } = useCentrifugoClient({
     token,
   })
@@ -110,11 +101,7 @@ export function useViewerWidget(): ViewerWidgetViewModel {
   )
 
   const handleBroadcastEvent = useCallback(
-    (payload: CentrifugoBroadcastEventResponseUnionEvent) => {
-      if (payload.event !== 'views') {
-        return
-      }
-
+    (payload: CentrifugoBroadcastViewsResponse) => {
       queryClient.setQueryData(
         viewerQueryKeys.broadcastRestreams(liveToken, payload.broadcast_id),
         (
@@ -171,7 +158,7 @@ export function useViewerWidget(): ViewerWidgetViewModel {
 
     queryClient.setQueryData(
       viewerQueryKeys.templateWidget(token, templateId),
-      normalizeWidgetPayload(payload),
+      payload,
     )
   }, [queryClient, templateId, token])
 
@@ -219,7 +206,6 @@ export function useViewerWidget(): ViewerWidgetViewModel {
 
   const hasError =
     templateWidgetQuery.isError ||
-    connectionTokenQuery.isError ||
     templateChannelTokenQuery.isError ||
     (!testMode &&
       (projectInfoQuery.isError ||

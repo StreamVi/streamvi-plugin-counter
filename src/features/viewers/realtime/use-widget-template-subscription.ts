@@ -1,8 +1,8 @@
 import type { Centrifuge, Subscription } from 'centrifuge'
 import { useEffect, useRef } from 'react'
 import type { RefObject } from 'react'
-import type { CentrifugoWidgetTemplatePayloadResponse } from '../api/contracts'
 import type { WidgetPayload } from '../types'
+import { isCentrifugoWidgetTemplatePayloadEvent } from './guards'
 
 interface UseWidgetTemplateSubscriptionOptions {
   accessToken: string | undefined
@@ -40,10 +40,8 @@ export function useWidgetTemplateSubscription({
     subscriptionRef.current = subscription
 
     subscription.on('publication', (context) => {
-      const data = context.data as Partial<CentrifugoWidgetTemplatePayloadResponse> | undefined
-
-      if (data?.event === 'widget-template-payload') {
-        onTemplatePayload(data.payload ?? null)
+      if (isCentrifugoWidgetTemplatePayloadEvent(context.data)) {
+        onTemplatePayload(context.data.payload)
         return
       }
 

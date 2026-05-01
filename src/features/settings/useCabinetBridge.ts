@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import type { WidgetPayload } from '../viewers/types'
+import { isWidgetPayload, type WidgetPayload } from '../viewers/types'
 
 type CabinetToWidgetMessage = {
   type: 'streamvi:cabinet:init' | 'streamvi:cabinet:sync'
@@ -31,44 +31,22 @@ interface UseCabinetBridgeProps {
 
 const SAVE_DEBOUNCE_MS = 400
 
-function isPayload(value: unknown): value is WidgetPayload {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return false
-  }
-
-  const payload = value as Partial<WidgetPayload>
-
-  return (
-    (payload.bg === undefined || typeof payload.bg === 'string') &&
-    (payload.text === undefined || typeof payload.text === 'string') &&
-    (payload.opacity === undefined || typeof payload.opacity === 'number') &&
-    (payload.size === undefined || typeof payload.size === 'number') &&
-    (payload.channels_size === undefined ||
-      typeof payload.channels_size === 'number') &&
-    (payload.test === undefined || typeof payload.test === 'boolean') &&
-    (payload.channels === undefined || typeof payload.channels === 'boolean') &&
-    (payload.channels_layout === undefined ||
-      payload.channels_layout === 'row' ||
-      payload.channels_layout === 'column') &&
-    (payload.total === undefined || typeof payload.total === 'boolean') &&
-    (payload.icon === undefined || typeof payload.icon === 'boolean')
-  )
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function isCabinetMessage(value: unknown): value is CabinetToWidgetMessage {
-  if (typeof value !== 'object' || value === null) {
+  if (!isRecord(value)) {
     return false
   }
 
-  const message = value as Partial<CabinetToWidgetMessage>
-
   return (
-    (message.type === 'streamvi:cabinet:init' ||
-      message.type === 'streamvi:cabinet:sync') &&
-    typeof message.token === 'string' &&
-    typeof message.template_id === 'string' &&
-    typeof message.project_id === 'number' &&
-    isPayload(message.payload)
+    (value.type === 'streamvi:cabinet:init' ||
+      value.type === 'streamvi:cabinet:sync') &&
+    typeof value.token === 'string' &&
+    typeof value.template_id === 'string' &&
+    typeof value.project_id === 'number' &&
+    isWidgetPayload(value.payload)
   )
 }
 

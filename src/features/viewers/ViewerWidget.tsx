@@ -5,6 +5,7 @@ import {
   defaultWidgetOptions,
   getWidgetQueryParams,
   type WidgetOptions,
+  type WidgetQueryParams,
 } from './types'
 import { useViewerWidget } from './useViewerWidget'
 
@@ -144,10 +145,29 @@ export function WidgetCard({
   )
 }
 
+function ViewerWidgetContent({
+  widgetParams,
+}: {
+  widgetParams: WidgetQueryParams
+}) {
+  const { channels, isStreamActive, options, status, totalViewers } = useViewerWidget(widgetParams)
+
+  const formattedCount = isStreamActive ? formatViewerCount(totalViewers) : '—'
+
+  return (
+    <main className="app-shell app-shell-minimal">
+      <WidgetCard
+        channels={channels}
+        count={formattedCount}
+        options={options}
+        status={status}
+      />
+    </main>
+  )
+}
+
 export function ViewerWidget() {
   const widgetParams = getWidgetQueryParams(window.location.search)
-  const { channels, isStreamActive, options, status, totalViewers } = useViewerWidget()
-
   if (widgetParams.templateId === '' || widgetParams.token === '') {
     return (
       <main className="app-shell app-shell-minimal">
@@ -163,16 +183,5 @@ export function ViewerWidget() {
     )
   }
 
-  const formattedCount = isStreamActive ? formatViewerCount(totalViewers) : '—'
-
-  return (
-    <main className="app-shell app-shell-minimal">
-      <WidgetCard
-        channels={channels}
-        count={formattedCount}
-        options={options}
-        status={status}
-      />
-    </main>
-  )
+  return <ViewerWidgetContent widgetParams={widgetParams} />
 }

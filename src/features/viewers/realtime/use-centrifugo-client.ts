@@ -1,8 +1,9 @@
 import { Centrifuge } from 'centrifuge'
 import { useEffect, useRef, useState } from 'react'
+import { config } from '../../../config'
 import { text } from '../../../shared/i18n'
 import type { ViewerWidgetViewModel } from '../api/contracts'
-import { getCentrifugoConnectionToken } from '../api/client'
+import { createCentrifugoConnectionTokenGetter } from '../api/client'
 
 interface UseCentrifugoClientOptions {
   token: string
@@ -22,9 +23,9 @@ export function useCentrifugoClient({
     }
 
     const client = new Centrifuge(
-      `${import.meta.env.VITE_CENTRIFUGO_HOST}/connection/websocket`,
+      `${config.centrifugoHost}/connection/websocket`,
       {
-        getToken: getCentrifugoConnectionToken(token),
+        getToken: createCentrifugoConnectionTokenGetter(token),
       },
     )
 

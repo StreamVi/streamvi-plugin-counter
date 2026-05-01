@@ -1,8 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
+import { skipToken, useQuery } from '@tanstack/react-query'
 import {
   getBroadcastRestreams,
   getBroadcastStatus,
-  getCentrifugoConnectionToken,
   getBroadcastChannelToken,
   getChannelToken,
   getPlatforms,
@@ -11,15 +10,13 @@ import {
 } from './api/client'
 
 export const viewerQueryKeys = {
-  broadcastChannelToken: (tokenId: string, broadcastId: number) =>
+  broadcastChannelToken: (tokenId: string, broadcastId: number | null) =>
     ['viewer-widget', 'broadcast-channel-token', tokenId, broadcastId] as const,
-  broadcastRestreams: (tokenId: string, broadcastId: number) =>
+  broadcastRestreams: (tokenId: string, broadcastId: number | null) =>
     ['viewer-widget', 'broadcast-restreams', tokenId, broadcastId] as const,
-  broadcastStatus: (tokenId: string, projectId: number) =>
+  broadcastStatus: (tokenId: string, projectId: number | null) =>
     ['viewer-widget', 'broadcast-status', tokenId, projectId] as const,
-  centrifugoConnectionToken: (tokenId: string) =>
-    ['viewer-widget', 'centrifugo-connection-token', tokenId] as const,
-  channelToken: (tokenId: string, channelName: string) =>
+  channelToken: (tokenId: string, channelName: string | null) =>
     ['viewer-widget', 'channel-token', tokenId, channelName] as const,
   platforms: (tokenId: string) => ['viewer-widget', 'platforms', tokenId] as const,
   projectInfo: (tokenId: string) => ['viewer-widget', 'project-info', tokenId] as const,
@@ -38,8 +35,11 @@ export function useProjectInfoQuery(tokenId: string) {
 export function useBroadcastStatusQuery(tokenId: string, projectId: number | null) {
   return useQuery({
     enabled: Boolean(tokenId) && projectId !== null,
-    queryFn: () => getBroadcastStatus(tokenId, projectId as number),
-    queryKey: viewerQueryKeys.broadcastStatus(tokenId, projectId as number),
+    queryFn:
+      tokenId && projectId !== null
+        ? () => getBroadcastStatus(tokenId, projectId)
+        : skipToken,
+    queryKey: viewerQueryKeys.broadcastStatus(tokenId, projectId),
   })
 }
 
@@ -49,18 +49,12 @@ export function useBroadcastRestreamsQuery(
 ) {
   return useQuery({
     enabled: Boolean(tokenId) && broadcastId !== null,
-    queryFn: () => getBroadcastRestreams(tokenId, broadcastId as number),
-    queryKey: viewerQueryKeys.broadcastRestreams(tokenId, broadcastId as number),
+    queryFn:
+      tokenId && broadcastId !== null
+        ? () => getBroadcastRestreams(tokenId, broadcastId)
+        : skipToken,
+    queryKey: viewerQueryKeys.broadcastRestreams(tokenId, broadcastId),
     refetchInterval: 30_000,
-  })
-}
-
-export function useCentrifugoConnectionTokenQuery(tokenId: string) {
-  return useQuery({
-    enabled: Boolean(tokenId),
-    queryFn: () => getCentrifugoConnectionToken(tokenId),
-    queryKey: viewerQueryKeys.centrifugoConnectionToken(tokenId),
-    staleTime: 5 * 60_000,
   })
 }
 
@@ -79,8 +73,11 @@ export function useBroadcastChannelTokenQuery(
 ) {
   return useQuery({
     enabled: Boolean(tokenId) && broadcastId !== null,
-    queryFn: () => getBroadcastChannelToken(tokenId, broadcastId as number),
-    queryKey: viewerQueryKeys.broadcastChannelToken(tokenId, broadcastId as number),
+    queryFn:
+      tokenId && broadcastId !== null
+        ? () => getBroadcastChannelToken(tokenId, broadcastId)
+        : skipToken,
+    queryKey: viewerQueryKeys.broadcastChannelToken(tokenId, broadcastId),
     staleTime: 60_000,
   })
 }
@@ -88,8 +85,11 @@ export function useBroadcastChannelTokenQuery(
 export function useChannelTokenQuery(tokenId: string, channelName: string | null) {
   return useQuery({
     enabled: Boolean(tokenId) && Boolean(channelName),
-    queryFn: () => getChannelToken(tokenId, channelName as string),
-    queryKey: viewerQueryKeys.channelToken(tokenId, channelName as string),
+    queryFn:
+      tokenId && channelName
+        ? () => getChannelToken(tokenId, channelName)
+        : skipToken,
+    queryKey: viewerQueryKeys.channelToken(tokenId, channelName),
     staleTime: 60_000,
   })
 }

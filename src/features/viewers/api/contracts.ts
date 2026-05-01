@@ -72,10 +72,6 @@ export interface CentrifugoBroadcastRestreamsResponse {
   event: 'restreams.started' | 'restreams.stopped'
 }
 
-export type CentrifugoBroadcastEventResponseUnionEvent =
-  | CentrifugoBroadcastViewsResponse
-  | CentrifugoBroadcastRestreamsResponse
-
 export interface CentrifugoWidgetTemplatePayloadResponse {
   event: 'widget-template-payload'
   payload: WidgetPayload | null

@@ -1,13 +1,17 @@
 import type { Centrifuge, Subscription } from 'centrifuge'
 import { useEffect, useRef } from 'react'
 import type { RefObject } from 'react'
-import type { CentrifugoBroadcastEventResponseUnionEvent } from '../api/contracts'
+import type { CentrifugoBroadcastViewsResponse } from '../api/contracts'
+import {
+  isCentrifugoBroadcastRestreamsEvent,
+  isCentrifugoBroadcastViewsEvent,
+} from './guards'
 
 interface UseBroadcastSubscriptionOptions {
   accessToken: string | undefined
   broadcastId: number | null
   clientRef: RefObject<Centrifuge | null>
-  onBroadcastEvent: (payload: CentrifugoBroadcastEventResponseUnionEvent) => void
+  onBroadcastEvent: (payload: CentrifugoBroadcastViewsResponse) => void
   onRestreamsChange: () => void
 }
 
@@ -39,13 +43,12 @@ export function useBroadcastSubscription({
     subscriptionRef.current = subscription
 
     subscription.on('publication', (context) => {
-      const data = context.data as Partial<CentrifugoBroadcastEventResponseUnionEvent> | undefined
-
-      if (data?.event === 'views') {
-        onBroadcastEvent(data as CentrifugoBroadcastEventResponseUnionEvent)
+      if (isCentrifugoBroadcastViewsEvent(context.data)) {
+        onBroadcastEvent(context.data)
+        return
       }
 
-      if (data?.event === 'restreams.started' || data?.event === 'restreams.stopped') {
+      if (isCentrifugoBroadcastRestreamsEvent(context.data)) {
         onRestreamsChange()
       }
     })

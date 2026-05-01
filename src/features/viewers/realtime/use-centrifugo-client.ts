@@ -1,5 +1,6 @@
 import { Centrifuge } from 'centrifuge'
 import { useEffect, useRef, useState } from 'react'
+import { text } from '../../../shared/i18n'
 import type { ViewerWidgetViewModel } from '../api/contracts'
 import { getCentrifugoConnectionToken } from '../api/client'
 
@@ -40,7 +41,7 @@ export function useCentrifugoClient({
     })
     client.on('error', (context) => {
       setConnectionState('error')
-      console.error(context.error?.message ?? 'Failed to connect to Centrifugo.')
+      console.error(context.error?.message ?? text.errors.centrifugoConnection)
     })
 
     client.connect()

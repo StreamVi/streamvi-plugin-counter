@@ -17,6 +17,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@streamvi/streamvi-ui": "https://github.com/StreamVi/streamvi-ui/tarball/d37bbae5fc20556ca1550a0283fbe9fad0ff160b",
     "@tanstack/react-query": "^5.97.0",
     "axios": "^1.15.0",
     "centrifuge": "^5.5.3",

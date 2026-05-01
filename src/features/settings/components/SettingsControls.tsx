@@ -1,10 +1,92 @@
 import type { Dispatch, SetStateAction } from 'react'
+import { SvCheckbox, SvRadioGroup, SvSlider } from '@streamvi/streamvi-ui'
+import { text } from '../../../shared/i18n'
 import type { WidgetOptions } from '../../viewers/types'
 import { fromUiScale, toUiScale } from '../lib/scale'
 
 interface SettingsControlsProps {
   options: WidgetOptions
   setOptions: Dispatch<SetStateAction<WidgetOptions>>
+}
+
+interface SettingsSliderFieldProps {
+  className?: string
+  label: string
+  max: number
+  min: number
+  onValueChange: (value: number) => void
+  step?: number
+  value: number
+  valueLabel: string | number
+}
+
+interface SettingsCheckboxFieldProps {
+  checked: boolean
+  description?: string
+  label: string
+  onCheckedChange: (checked: boolean) => void
+}
+
+function SettingsSliderField({
+  className,
+  label,
+  max,
+  min,
+  onValueChange,
+  step = 1,
+  value,
+  valueLabel,
+}: SettingsSliderFieldProps) {
+  return (
+    <label className={`settings-field${className ? ` ${className}` : ''}`}>
+      <span className="settings-field-label">
+        {label}: {valueLabel}
+      </span>
+      <SvSlider
+        className="settings-ui-slider"
+        innerProps={{
+          control: {
+            className: 'settings-ui-slider-control',
+          },
+        }}
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onValueChange={(nextValue) => {
+          if (typeof nextValue === 'number') {
+            onValueChange(nextValue)
+          }
+        }}
+      />
+    </label>
+  )
+}
+
+function SettingsCheckboxField({
+  checked,
+  description,
+  label,
+  onCheckedChange,
+}: SettingsCheckboxFieldProps) {
+  return (
+    <div className="settings-checkbox-field">
+      <SvCheckbox
+        className="settings-ui-checkbox-control"
+        checked={checked}
+        labelContent={label}
+        innerProps={{
+          label: {
+            className: 'settings-ui-checkbox',
+          },
+        }}
+        onCheckedChange={onCheckedChange}
+      />
+      {description ? (
+        <p className="settings-checkbox-description">{description}</p>
+      ) : null}
+    </div>
+  )
 }
 
 export function SettingsControls({
@@ -15,7 +97,7 @@ export function SettingsControls({
     <div className="minimal-builder-controls">
       <div className="settings-color-row">
         <label className="settings-color-swatch">
-          <span className="settings-field-label">Background</span>
+          <span className="settings-field-label">{text.settings.background}</span>
           <input
             className="settings-color-input"
             type="color"
@@ -30,7 +112,7 @@ export function SettingsControls({
         </label>
 
         <label className="settings-color-swatch">
-          <span className="settings-field-label">Text</span>
+          <span className="settings-field-label">{text.settings.text}</span>
           <input
             className="settings-color-input"
             type="color"
@@ -45,151 +127,138 @@ export function SettingsControls({
         </label>
       </div>
 
-      <label className="settings-field">
-        <span className="settings-field-label">
-          Background opacity: {options.backgroundOpacity}%
-        </span>
-        <input
-          className="settings-range-input"
-          type="range"
-          min="0"
-          max="100"
-          step="1"
-          value={options.backgroundOpacity}
-          onChange={(event) =>
-            setOptions((current) => ({
-              ...current,
-              backgroundOpacity: Number(event.target.value),
-            }))
-          }
-        />
-      </label>
+      <SettingsSliderField
+        className="settings-field-full"
+        label={text.settings.backgroundOpacity}
+        min={0}
+        max={100}
+        value={options.backgroundOpacity}
+        valueLabel={`${options.backgroundOpacity}%`}
+        onValueChange={(value) =>
+          setOptions((current) => ({
+            ...current,
+            backgroundOpacity: value,
+          }))
+        }
+      />
 
-      <label className="settings-field">
-        <span className="settings-field-label">
-          Text scale: {toUiScale(options.fontSize)}
-        </span>
-        <input
-          className="settings-range-input"
-          type="range"
-          min="5"
-          max="100"
-          step="1"
+      <div className="settings-slider-row">
+        <SettingsSliderField
+          label={text.settings.textScale}
+          min={5}
+          max={100}
           value={toUiScale(options.fontSize)}
-          onChange={(event) =>
+          valueLabel={`${toUiScale(options.fontSize)}%`}
+          onValueChange={(value) =>
             setOptions((current) => ({
               ...current,
-              fontSize: fromUiScale(Number(event.target.value)),
+              fontSize: fromUiScale(value),
             }))
           }
         />
-      </label>
 
-      <label className="settings-field">
-        <span className="settings-field-label">
-          Channels scale: {options.channelsSize}
-        </span>
-        <input
-          className="settings-range-input"
-          type="range"
-          min="8"
-          max="96"
-          step="1"
+        <SettingsSliderField
+          label={text.settings.channelsScale}
+          min={8}
+          max={96}
           value={options.channelsSize}
-          onChange={(event) =>
+          valueLabel={`${options.channelsSize}%`}
+          onValueChange={(value) =>
             setOptions((current) => ({
               ...current,
-              channelsSize: Number(event.target.value),
+              channelsSize: value,
             }))
           }
         />
-      </label>
+      </div>
 
-      <label className="settings-toggle">
-        <input
-          type="checkbox"
-          checked={options.testMode}
-          onChange={(event) =>
+      <SettingsCheckboxField
+        checked={options.testMode}
+        description={text.settings.testModeDescription}
+        label={text.settings.testMode}
+        onCheckedChange={(checked) =>
+          setOptions((current) => ({
+            ...current,
+            testMode: checked,
+          }))
+        }
+      />
+
+      <SettingsCheckboxField
+        checked={options.showTotal}
+        label={text.settings.showTotalViewers}
+        onCheckedChange={(checked) =>
+          setOptions((current) => ({
+            ...current,
+            showTotal: checked,
+          }))
+        }
+      />
+
+      <SettingsCheckboxField
+        checked={options.showChannels}
+        label={text.settings.showChannels}
+        onCheckedChange={(checked) =>
+          setOptions((current) => ({
+            ...current,
+            showChannels: checked,
+          }))
+        }
+      />
+
+      <SettingsCheckboxField
+        checked={options.showIcon}
+        label={text.settings.showIconBeforeValue}
+        onCheckedChange={(checked) =>
+          setOptions((current) => ({
+            ...current,
+            showIcon: checked,
+          }))
+        }
+      />
+
+      <div className="settings-field">
+        <span className="settings-field-label">{text.settings.channelsLayout}</span>
+        <SvRadioGroup
+          className="settings-ui-radio-group"
+          innerProps={{
+            listLabel: {
+              className: 'settings-ui-radio-tab',
+            },
+          }}
+          value={options.channelsLayout}
+          itemList={[
+            {
+              id: 'row',
+              itemLabel: text.settings.row,
+              itemProps: {
+                label: {
+                  className:
+                    options.channelsLayout === 'row' ? 'is-active' : undefined,
+                },
+              },
+            },
+            {
+              id: 'column',
+              itemLabel: text.settings.column,
+              itemProps: {
+                label: {
+                  className:
+                    options.channelsLayout === 'column'
+                      ? 'is-active'
+                      : undefined,
+                },
+              },
+            },
+          ]}
+          onValueChange={(channelsLayout: WidgetOptions['channelsLayout']) =>
             setOptions((current) => ({
               ...current,
-              testMode: event.target.checked,
+              channelsLayout,
             }))
           }
         />
-        <span>Test mode</span>
-      </label>
-
-      <label className="settings-toggle">
-        <input
-          type="checkbox"
-          checked={options.showTotal}
-          onChange={(event) =>
-            setOptions((current) => ({
-              ...current,
-              showTotal: event.target.checked,
-            }))
-          }
-        />
-        <span>Show total viewers</span>
-      </label>
-
-      <label className="settings-toggle">
-        <input
-          type="checkbox"
-          checked={options.showChannels}
-          onChange={(event) =>
-            setOptions((current) => ({
-              ...current,
-              showChannels: event.target.checked,
-            }))
-          }
-        />
-        <span>Show channels</span>
-      </label>
-
-      <label className="settings-field">
-        <span className="settings-field-label">Channels layout</span>
-        <div className="settings-segmented">
-          <button
-            className={`settings-segment${options.channelsLayout === 'row' ? ' is-active' : ''}`}
-            type="button"
-            onClick={() =>
-              setOptions((current) => ({
-                ...current,
-                channelsLayout: 'row',
-              }))
-            }
-          >
-            Row
-          </button>
-          <button
-            className={`settings-segment${options.channelsLayout === 'column' ? ' is-active' : ''}`}
-            type="button"
-            onClick={() =>
-              setOptions((current) => ({
-                ...current,
-                channelsLayout: 'column',
-              }))
-            }
-          >
-            Column
-          </button>
-        </div>
-      </label>
-
-      <label className="settings-toggle">
-        <input
-          type="checkbox"
-          checked={options.showIcon}
-          onChange={(event) =>
-            setOptions((current) => ({
-              ...current,
-              showIcon: event.target.checked,
-            }))
-          }
-        />
-        <span>Show icon before the value</span>
-      </label>
+      </div>
     </div>
   )
 }

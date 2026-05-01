@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { config } from '../../../config'
+import { appLanguage } from '../../../shared/i18n'
 import type {
   CentrifugoChannelAccessTokenResponse,
   CentrifugoConnectionAccessTokenResponse,
@@ -14,6 +15,10 @@ import type { WidgetPayload } from '../types'
 const http = axios.create({
   baseURL: config.apiHost,
 })
+
+const localizedParams = {
+  language: appLanguage,
+}
 
 export async function getProjectInfo(tokenId: string): Promise<ProjectInfoResponse> {
   const { data } = await http.get<ProjectInfoResponse>('/method/project/get_project_info', {
@@ -31,7 +36,7 @@ export const getCentrifugoConnectionToken = (tokenId: string) => async () => {
     params: {
       widget: tokenId,
       v: '1',
-      language: 'ru',
+      ...localizedParams,
     },
   })
 
@@ -68,7 +73,7 @@ export async function getBroadcastStatus(
     '/method/broadcast/status',
     {
       params: {
-        language: 'ru',
+        ...localizedParams,
         project_id: projectId,
         widget: tokenId,
         v: '1',
@@ -87,7 +92,7 @@ export async function getBroadcastRestreams(
     '/method/broadcast/restreams',
     {
       params: {
-        language: 'ru',
+        ...localizedParams,
         broadcast_id: broadcastId,
         key: tokenId,
         widget: tokenId,
@@ -102,7 +107,7 @@ export async function getBroadcastRestreams(
 export async function getPlatforms(tokenId: string): Promise<SitePlatformsSupportedResponse> {
   const { data } = await http.get<SitePlatformsSupportedResponse>('/method/platforms/list', {
     params: {
-      language: 'ru',
+      ...localizedParams,
       widget: tokenId,
       v: '1',
     },
@@ -122,7 +127,7 @@ export async function getTemplateWidget(
         template_id: templateId,
         widget: tokenId,
         v: '1',
-        language: 'ru',
+        ...localizedParams,
       },
     },
   )

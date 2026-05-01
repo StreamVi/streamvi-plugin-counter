@@ -1,3 +1,6 @@
+import { SvButton } from '@streamvi/streamvi-ui'
+import { text } from '../../../shared/i18n'
+
 interface SettingsUrlFieldProps {
   isCopied: boolean
   onCopyClick: () => void
@@ -17,14 +20,16 @@ export function SettingsUrlField({
           type="text"
           value={url}
           readOnly
-          aria-label="OBS widget URL"
+          aria-label={text.common.obsWidgetUrl}
           onFocus={(event) => event.currentTarget.select()}
         />
-        <button
+        <SvButton
           className="settings-icon-button"
+          styleType="secondary"
+          size="small"
           type="button"
-          aria-label={isCopied ? 'Copied' : 'Copy URL'}
-          title={isCopied ? 'Copied' : 'Copy URL'}
+          aria-label={isCopied ? text.common.copied : text.common.copyObsUrl}
+          title={isCopied ? text.common.copied : text.common.copyObsUrl}
           onClick={onCopyClick}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -41,7 +46,7 @@ export function SettingsUrlField({
               strokeWidth="1.5"
             />
           </svg>
-        </button>
+        </SvButton>
       </div>
     </div>
   )

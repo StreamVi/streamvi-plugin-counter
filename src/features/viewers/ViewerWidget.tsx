@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import { appLocale, text } from '../../shared/i18n'
 import type { ViewerChannel } from './api/contracts'
 import {
   defaultWidgetOptions,
@@ -14,7 +15,7 @@ function formatViewerCount(viewerCount: number | null): string {
     return '...'
   }
 
-  return new Intl.NumberFormat('en-US').format(viewerCount)
+  return new Intl.NumberFormat(appLocale).format(viewerCount)
 }
 
 function ChannelPlatformIcon({
@@ -41,9 +42,15 @@ function hexToRgbTriplet(hexColor: string): string {
 }
 
 function getWidgetCardStyle(options: WidgetOptions): CSSProperties {
+  const isFullyTransparent = options.backgroundOpacity === 0
+
   return {
     background: `rgb(${hexToRgbTriplet(options.backgroundColor)} / ${options.backgroundOpacity}%)`,
-    borderColor: `rgb(${hexToRgbTriplet(options.textColor)} / 14%)`,
+    backdropFilter: isFullyTransparent ? 'none' : undefined,
+    borderColor: isFullyTransparent
+      ? 'transparent'
+      : `rgb(${hexToRgbTriplet(options.textColor)} / 14%)`,
+    boxShadow: isFullyTransparent ? 'none' : undefined,
     color: options.textColor,
     ['--widget-font-size' as string]: `clamp(24px, ${(
       options.fontSize * 0.12
@@ -145,13 +152,11 @@ export function ViewerWidget() {
     return (
       <main className="app-shell app-shell-minimal">
         <section className="widget-card widget-card-obs widget-card-minimal widget-card-notice">
-          <h2 className="widget-notice-title">Missing widget parameters</h2>
+          <h2 className="widget-notice-title">
+            {text.notices.missingWidgetParamsTitle}
+          </h2>
           <p className="widget-notice-text">
-            Add
-            {' '}
-            ?template_id=YOUR_TEMPLATE_ID&token=YOUR_TOKEN
-            {' '}
-            to the URL before opening the widget.
+            {text.notices.obsMissingWidgetParamsText}
           </p>
         </section>
       </main>

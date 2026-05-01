@@ -1,4 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
+import '@streamvi/streamvi-ui/style.css'
+import { appLocale, text } from '../../shared/i18n'
 import { WidgetCard } from '../viewers/ViewerWidget'
 import {
   createWidgetPayload,
@@ -12,6 +14,7 @@ import { SettingsControls } from './components/SettingsControls'
 import { SettingsUrlField } from './components/SettingsUrlField'
 import { buildObsUrl } from './lib/build-obs-url'
 import { previewChannels } from './preview-data'
+import './settings-ui.css'
 import { useCabinetBridge } from './useCabinetBridge'
 
 export function SettingsPage() {
@@ -28,6 +31,7 @@ export function SettingsPage() {
     () => buildObsUrl(initialWidgetParams),
     [initialWidgetParams],
   )
+  const previewCount = useMemo(() => new Intl.NumberFormat(appLocale).format(12540), [])
 
   const handleSyncPayload = useCallback((payload: WidgetPayload) => {
     const nextOptions = getWidgetOptionsFromPayload(payload)
@@ -47,26 +51,24 @@ export function SettingsPage() {
 
   return (
     <main className="app-shell">
-      <div className="settings-hero">
-        <h1 className="settings-title">Viewer counter for OBS</h1>
-      </div>
-
       {initialWidgetParams.templateId === '' || initialWidgetParams.token === '' ? (
-        <section className="settings-panel settings-notice">
-          <h2 className="settings-notice-title">Missing widget parameters</h2>
+        <section className="settings-notice">
+          <h2 className="settings-notice-title">
+            {text.notices.missingWidgetParamsTitle}
+          </h2>
           <p className="settings-notice-text">
-            Open this page with the required query parameters:
+            {text.notices.settingsMissingWidgetParamsText}
             {' '}
             ?template_id=YOUR_TEMPLATE_ID&token=YOUR_TOKEN.
           </p>
           <p className="settings-notice-text">
-            Example:
+            {text.notices.missingWidgetParamsExample}
             {' '}
             <code>?template_id=YOUR_TEMPLATE_ID&token=YOUR_TOKEN</code>
           </p>
         </section>
       ) : (
-        <div className="settings-panel">
+        <>
           <SettingsUrlField
             isCopied={isCopied}
             onCopyClick={() => {
@@ -81,13 +83,13 @@ export function SettingsPage() {
             <div className="minimal-builder-preview">
               <WidgetCard
                 channels={previewChannels}
-                count="12,540"
+                count={previewCount}
                 options={options}
                 preview
               />
             </div>
           </div>
-        </div>
+        </>
       )}
     </main>
   )
